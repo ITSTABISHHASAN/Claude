@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>%VITE_BRAND% | %VITE_TAGLINE%</title>
+  <meta name="description" content="%VITE_DESCRIPTION%">
+  <meta name="theme-color" content="#05060A">
+  <meta name="color-scheme" content="dark">
+  <link rel="canonical" href="%VITE_SITE_URL%/">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="%VITE_BRAND%">
+  <meta property="og:title" content="%VITE_BRAND% | %VITE_TAGLINE%">
+  <meta property="og:description" content="%VITE_DESCRIPTION%">
+  <meta property="og:url" content="%VITE_SITE_URL%/">
+  <meta property="og:image" content="%VITE_SITE_URL%/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A liquid glass orb glowing blue in dark space above the %VITE_BRAND% headline.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="%VITE_BRAND% | %VITE_TAGLINE%">
+  <meta name="twitter:description" content="%VITE_DESCRIPTION%">
+  <meta name="twitter:image" content="%VITE_SITE_URL%/og.jpg">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "%VITE_BRAND%",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "%VITE_DESCRIPTION%",
+    "url": "%VITE_SITE_URL%/",
+    "offers": { "@type": "AggregateOffer", "lowPrice": "19", "highPrice": "89", "priceCurrency": "USD" }
+  }
+  </script>
+
+  <!-- Runs before first paint: flags JS, motion preference and arrival by page transition. -->
+  <script>
+    (function () {
+      var d = document.documentElement;
+      d.classList.add('js');
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('reduced-motion');
+      try { if (sessionStorage.getItem('nx:transition')) d.classList.add('is-arriving'); } catch (e) {}
+    })();
+  </script>
+  <style>
+    /* Critical paint: void ground and the preloader, before the stylesheet arrives. */
+    html { background: #05060a; }
+    .preloader { position: fixed; inset: 0; z-index: 90; background: #05060a; }
+    html:not(.js) .preloader, .reduced-motion .preloader, .is-arriving .preloader { display: none; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- Preloader: a thin silver ring draws itself, then folds into the nav logo. -->
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader__inner">
+      <svg class="preloader__mark" viewBox="0 0 120 120" fill="none">
+        <defs>
+          <linearGradient id="pl-silver" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#C9CED6" />
+            <stop offset="1" stop-color="#8A9099" />
+          </linearGradient>
+        </defs>
+        <circle class="preloader__track" cx="60" cy="60" r="52" />
+        <circle class="preloader__ring" cx="60" cy="60" r="52" pathLength="1" />
+        <path class="preloader__n" d="M44 78V42l32 36V42" pathLength="1" />
+      </svg>
+      <span class="preloader__count mono" id="preloader-count">000</span>
+      <span class="preloader__label mono">Initialising agents</span>
+    </div>
+  </div>
+
+  <!-- Persistent background: WebGL orb, beams and particles; CSS grid and grain. -->
+  <canvas class="stage" id="stage" aria-hidden="true"></canvas>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <nav class="nav__pill glass" aria-label="Primary">
+      <a class="logo" href="#top" aria-label="%VITE_BRAND% home">
+        <svg class="logo__mark" viewBox="0 0 120 120" fill="none" aria-hidden="true">
+          <circle cx="60" cy="60" r="52" />
+          <path d="M44 78V42l32 36V42" />
+        </svg>
+        <span class="logo__word">%VITE_BRAND%</span>
+      </a>
+      <ul class="nav__links" id="nav-links">
+        <li><a href="#product" data-nav>Product</a></li>
+        <li><a href="#how" data-nav>Solutions</a></li>
+        <li><a href="#pricing" data-nav>Pricing</a></li>
+        <li><a href="./docs.html">Docs</a></li>
+      </ul>
+      <a class="btn btn--primary btn--sm nav__cta" href="#cta" data-magnetic data-orb-pulse>
+        <span>Get Started</span>
+      </a>
+      <button class="nav__toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="Open menu">
+        <span></span><span></span>
+      </button>
+    </nav>
+  </header>
+
+  <main id="main">
+
+    <!-- 01 HERO -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="orb-fallback" aria-hidden="true"></div>
+      <div class="hero__inner container">
+        <p class="tag mono hero__tag" data-hero-item>
+          <span class="tag__dot" aria-hidden="true"></span>
+          v4.0 — Now live
+        </p>
+        <h1 class="hero__title display" id="hero-title" data-split="manual">
+          The operating system for <span class="shimmer">autonomous</span> business.
+        </h1>
+        <p class="hero__sub lead" data-hero-item>%VITE_DESCRIPTION%</p>
+        <div class="hero__ctas" data-hero-item>
+          <a class="btn btn--primary" href="#cta" data-magnetic data-orb-pulse><span>Start Free</span></a>
+          <a class="btn btn--glass" href="#showcase" data-magnetic>
+            <svg class="btn__icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z" fill="currentColor" /></svg>
+            <span>Watch Demo</span>
+          </a>
+        </div>
+      </div>
+      <div class="hero__meta container mono" data-hero-item aria-hidden="true">
+        <span><span class="hero__live"></span>Agents online <b id="agents-online">2,481</b></span>
+        <span class="hero__scroll">Scroll<i></i></span>
+      </div>
+    </section>
+
+    <!-- 02 TRUSTED BY -->
+    <section class="trusted" aria-label="Customers">
+      <p class="label mono">[ Trusted by operations teams at ]</p>
+      <div class="marquee" data-marquee>
+        <ul class="marquee__track" role="list">
+          <li class="wordmark wm-1"><span class="wm-glyph"></span>Halvora</li>
+          <li class="wordmark wm-2">KESTREL</li>
+          <li class="wordmark wm-3"><span class="wm-glyph"></span>vantor</li>
+          <li class="wordmark wm-4">Sablewood</li>
+          <li class="wordmark wm-5"><span class="wm-glyph"></span>ORINTH</li>
+          <li class="wordmark wm-6">Lumenfreight</li>
+          <li class="wordmark wm-7"><span class="wm-glyph"></span>Altaview</li>
+          <li class="wordmark wm-8">CIRRUS BANK</li>
+          <li class="wordmark wm-9"><span class="wm-glyph"></span>nordvik</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 03 PROBLEM → SOLUTION (pinned; the orb morphs behind each statement) -->
+    <section class="shift" id="shift" aria-labelledby="shift-title">
+      <div class="shift__inner container">
+        <div class="shift__copy">
+          <p class="label mono">[ 01 — The shift ]</p>
+          <h2 class="visually-hidden" id="shift-title">Why teams move to %VITE_BRAND%</h2>
+          <ol class="shift__list" role="list">
+            <li class="shift__item" data-shape="Connect">
+              <p class="mono shift__kicker">Connect</p>
+              <p class="shift__statement display">Forty tools. <span class="dim">Zero conversations.</span></p>
+              <p class="shift__answer">%VITE_BRAND% links every system you run into one live operational graph.</p>
+            </li>
+            <li class="shift__item" data-shape="Analyse">
+              <p class="mono shift__kicker">Analyse</p>
+              <p class="shift__statement display">Signals arrive faster <span class="dim">than people can read them.</span></p>
+              <p class="shift__answer">Agents watch every event and surface the few that need a human.</p>
+            </li>
+            <li class="shift__item" data-shape="Scale">
+              <p class="mono shift__kicker">Scale</p>
+              <p class="shift__statement display">Growth should not <span class="dim">mean more headcount.</span></p>
+              <p class="shift__answer">Every new workflow runs on the same agents, at any volume.</p>
+            </li>
+          </ol>
+          <div class="shift__progress mono" aria-hidden="true">
+            <span class="shift__count"><b id="shift-index">01</b> / 03</span>
+            <span class="shift__bars"><i></i><i></i><i></i></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 FEATURES -->
+    <section class="section features" id="product" aria-labelledby="features-title">
+      <div class="container">
+        <header class="section__head">
+          <p class="label mono" data-reveal>[ 02 — Capabilities ]</p>
+          <h2 class="display h2" id="features-title" data-split>Everything operations needs. <span class="shimmer">Nothing</span> it doesn't.</h2>
+        </header>
+        <div class="bento">
+          <article class="card glass bento__a" data-tilt data-reveal>
+            <div class="card__visual" aria-hidden="true">
+              <div class="ico-orbit">
+                <i class="ico-orbit__ring r1"><b></b></i>
+                <i class="ico-orbit__ring r2"><b></b></i>
+                <i class="ico-orbit__ring r3"><b></b></i>
+                <i class="ico-orbit__core"></i>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="mono card__label">[ Agents ]</p>
+              <h3 class="card__title">Autonomous agents</h3>
+              <p class="card__copy">Agents that plan, act and verify their own work across every system you run.</p>
+            </div>
+          </article>
+          <article class="card glass bento__b" data-tilt data-reveal>
+            <div class="card__visual" aria-hidden="true">
+              <div class="ico-layers"><i></i><i></i><i></i></div>
+            </div>
+            <div class="card__body">
+              <p class="mono card__label">[ Orchestrate ]</p>
+              <h3 class="card__title">Visual orchestration</h3>
+              <p class="card__copy">Compose workflows on a canvas, or describe them in one sentence.</p>
+            </div>
+          </article>
+          <article class="card glass bento__c" data-tilt data-reveal>
+            <div class="card__visual" aria-hidden="true">
+              <div class="ico-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </div>
+            <div class="card__body">
+              <p class="mono card__label">[ Observe ]</p>
+              <h3 class="card__title">Live analytics</h3>
+              <p class="card__copy">Every run is measured, traced and explained as it happens.</p>
+            </div>
+          </article>
+          <article class="card glass bento__d" data-tilt data-reveal>
+            <div class="card__visual" aria-hidden="true">
+              <div class="ico-prompt mono"><span class="ico-prompt__sigil">›</span><span class="ico-prompt__text" data-type="reconcile all open invoices">reconcile all open invoices</span><i class="ico-prompt__caret"></i></div>
+            </div>
+            <div class="card__body">
+              <p class="mono card__label">[ Language ]</p>
+              <h3 class="card__title">Plain-language control</h3>
+              <p class="card__copy">Ask for an outcome. %VITE_BRAND% writes the workflow.</p>
+            </div>
+          </article>
+          <article class="card glass bento__e" data-tilt data-reveal>
+            <div class="card__visual" aria-hidden="true">
+              <div class="ico-cube"><div class="ico-cube__body"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+            </div>
+            <div class="card__body">
+              <p class="mono card__label">[ Resilience ]</p>
+              <h3 class="card__title">Self-healing runs</h3>
+              <p class="card__copy">Failed steps retry, reroute or escalate on their own.</p>
+            </div>
+          </article>
+          <article class="card glass bento__f" data-tilt data-reveal>
+            <div class="card__visual" aria-hidden="true">
+              <div class="ico-shield"><i class="ico-shield__ring"></i><i class="ico-shield__ring"></i><i class="ico-shield__ring"></i><i class="ico-shield__sweep"></i>
+                <svg class="ico-shield__lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>
+              </div>
+            </div>
+            <div class="card__body">
+              <p class="mono card__label">[ Govern ]</p>
+              <h3 class="card__title">Guardrails by default</h3>
+              <p class="card__copy">Approval gates, audit trails and spend limits on every agent.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 PRODUCT SHOWCASE -->
+    <section class="section showcase" id="showcase" aria-labelledby="showcase-title">
+      <div class="container">
+        <header class="section__head">
+          <p class="label mono" data-reveal>[ 03 — Command center ]</p>
+          <h2 class="display h2" id="showcase-title" data-split>One view of everything your <span class="shimmer">agents</span> are doing.</h2>
+        </header>
+      </div>
+      <div class="showcase__stage" id="showcase-stage">
+        <svg class="showcase__wires" id="showcase-wires" aria-hidden="true"></svg>
+        <div class="dash glass glass--hero" id="dash" role="img" aria-label="The %VITE_BRAND% dashboard: live throughput, agent load, key metrics and a feed of completed tasks.">
+          <div class="dash__bar" aria-hidden="true">
+            <span class="dash__dots"><i></i><i></i><i></i></span>
+            <span class="dash__url mono">console / operations</span>
+            <span class="dash__live mono"><i></i>Live</span>
+          </div>
+          <div class="dash__body" aria-hidden="true">
+            <aside class="dash__side">
+              <i class="is-active"></i><i></i><i></i><i></i><i></i>
+            </aside>
+            <div class="dash__main">
+              <div class="dash__kpis">
+                <div class="kpi"><span class="mono kpi__label">Tasks today</span><b class="kpi__value" data-kpi="48209" data-live="7">0</b><span class="kpi__delta mono">+12.4%</span></div>
+                <div class="kpi"><span class="mono kpi__label">Median run</span><b class="kpi__value" data-kpi="1.8" data-decimals="1" data-suffix="s">0</b><span class="kpi__delta mono">−0.3s</span></div>
+                <div class="kpi"><span class="mono kpi__label">Hours saved</span><b class="kpi__value" data-kpi="1284" data-live="1">0</b><span class="kpi__delta mono">this week</span></div>
+                <div class="kpi"><span class="mono kpi__label">Success rate</span><b class="kpi__value" data-kpi="99.4" data-decimals="1" data-suffix="%">0</b><span class="kpi__delta mono">30-day</span></div>
+              </div>
+              <div class="dash__grid">
+                <div class="panel panel--chart" data-anchor="trace">
+                  <div class="panel__head"><span>Throughput</span><span class="mono">Runs / min · 24h</span></div>
+                  <div class="chart" id="chart-line">
+                    <svg viewBox="0 0 600 200" preserveAspectRatio="none"></svg>
+                    <div class="chart__tip mono" hidden></div>
+                  </div>
+                </div>
+                <div class="panel" data-anchor="fleet">
+                  <div class="panel__head"><span>Agent load</span><span class="mono">12 agents</span></div>
+                  <div class="bars" id="chart-bars"></div>
+                </div>
+                <div class="panel panel--feed" data-anchor="predict">
+                  <div class="panel__head"><span>Activity</span><span class="mono">Streaming</span></div>
+                  <ul class="feed mono" id="feed"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul class="callouts" role="list">
+          <li class="callout glass" data-callout="trace"><span class="mono">[ Trace ]</span>Every run, step by step</li>
+          <li class="callout glass" data-callout="fleet"><span class="mono">[ Fleet ]</span>Load balanced across agents</li>
+          <li class="callout glass" data-callout="predict"><span class="mono">[ Audit ]</span>A signed record of every action</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 06 HOW IT WORKS -->
+    <section class="section how" id="how" aria-labelledby="how-title">
+      <div class="container">
+        <header class="section__head">
+          <p class="label mono" data-reveal>[ 04 — How it works ]</p>
+          <h2 class="display h2" id="how-title" data-split>From connected to <span class="shimmer">compounding</span> in three steps.</h2>
+        </header>
+        <div class="timeline" id="timeline">
+          <div class="timeline__track" aria-hidden="true">
+            <span class="timeline__fill"></span>
+            <span class="timeline__pulse"></span>
+          </div>
+          <ol class="timeline__steps" role="list">
+            <li class="step">
+              <span class="step__node" aria-hidden="true"></span>
+              <p class="mono step__num">Step 01</p>
+              <h3 class="step__title">Connect</h3>
+              <p class="step__copy">Link your tools with 200+ native connectors. Most teams are live in under ten minutes.</p>
+            </li>
+            <li class="step">
+              <span class="step__node" aria-hidden="true"></span>
+              <p class="mono step__num">Step 02</p>
+              <h3 class="step__title">Automate</h3>
+              <p class="step__copy">Describe the outcome you want. Agents build, test and run the workflow for you.</p>
+            </li>
+            <li class="step">
+              <span class="step__node" aria-hidden="true"></span>
+              <p class="mono step__num">Step 03</p>
+              <h3 class="step__title">Scale</h3>
+              <p class="step__copy">Agents learn from every run and take on more of the load each week.</p>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 METRICS -->
+    <section class="section metrics" aria-labelledby="metrics-title">
+      <div class="container">
+        <header class="section__head section__head--center">
+          <p class="label mono" data-reveal>[ 05 — In production ]</p>
+          <h2 class="visually-hidden" id="metrics-title">%VITE_BRAND% in numbers</h2>
+        </header>
+        <dl class="metrics__grid">
+          <div class="metric" data-reveal>
+            <dt class="mono">Tasks automated each month</dt>
+            <dd class="metric__value"><span data-count="10">10</span><em>M+</em></dd>
+          </div>
+          <div class="metric" data-reveal>
+            <dt class="mono">Uptime, trailing 12 months</dt>
+            <dd class="metric__value"><span data-count="99.99" data-decimals="2">99.99</span><em>%</em></dd>
+          </div>
+          <div class="metric" data-reveal>
+            <dt class="mono">Faster month-end close</dt>
+            <dd class="metric__value"><span data-count="4">4</span><em>×</em></dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- 08 INTEGRATIONS -->
+    <section class="section integrations" id="integrations" aria-labelledby="int-title">
+      <div class="container integrations__inner">
+        <header class="section__head integrations__head">
+          <p class="label mono" data-reveal>[ 06 — Integrations ]</p>
+          <h2 class="display h2" id="int-title" data-split>Plugs into the stack you <span class="shimmer">already</span> run.</h2>
+          <p class="lead" data-reveal>200+ native connectors, a typed REST API and webhooks for everything else.</p>
+        </header>
+        <div class="orbit" id="orbit">
+          <div class="orbit__ring orbit__ring--1" aria-hidden="true"></div>
+          <div class="orbit__ring orbit__ring--2" aria-hidden="true"></div>
+          <div class="orbit__core" aria-hidden="true"><span></span></div>
+          <ul class="orbit__items" role="list" aria-label="Integration categories">
+            <li class="orbit__item" data-ring="0"><span class="chip glass"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c1.2-3.8 4-5.5 7-5.5s5.8 1.7 7 5.5" /></svg></span><span class="orbit__label mono">CRM</span></li>
+            <li class="orbit__item" data-ring="0"><span class="chip glass"><svg viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5" /><path d="m4.5 7 7.5 6 7.5-6" /></svg></span><span class="orbit__label mono">Email</span></li>
+            <li class="orbit__item" data-ring="0"><span class="chip glass"><svg viewBox="0 0 24 24"><path d="M5 4.5h14v15H5z" /><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4" /></svg></span><span class="orbit__label mono">Ledger</span></li>
+            <li class="orbit__item" data-ring="0"><span class="chip glass"><svg viewBox="0 0 24 24"><rect x="3.5" y="6.5" width="17" height="12" rx="2.5" /><path d="M3.5 10.5h17M7 15h3" /></svg></span><span class="orbit__label mono">Payments</span></li>
+            <li class="orbit__item" data-ring="0"><span class="chip glass"><svg viewBox="0 0 24 24"><path d="M5 18.5V11M10 18.5V6M15 18.5v-5M20 18.5V8.5" /></svg></span><span class="orbit__label mono">Analytics</span></li>
+            <li class="orbit__item" data-ring="1"><span class="chip glass"><svg viewBox="0 0 24 24"><path d="M4 9.5 12 5l8 4.5v9H4z" /><path d="M9 18.5v-5h6v5" /></svg></span><span class="orbit__label mono">Warehouse</span></li>
+            <li class="orbit__item" data-ring="1"><span class="chip glass"><svg viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14" rx="2.5" /><path d="M4 10h16M9 3.5v4M15 3.5v4" /></svg></span><span class="orbit__label mono">Calendar</span></li>
+            <li class="orbit__item" data-ring="1"><span class="chip glass"><svg viewBox="0 0 24 24"><path d="M4.5 7.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v2a2.5 2.5 0 0 0 0 5v2a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-2a2.5 2.5 0 0 0 0-5z" /></svg></span><span class="orbit__label mono">Tickets</span></li>
+            <li class="orbit__item" data-ring="1"><span class="chip glass"><svg viewBox="0 0 24 24"><path d="M7 3.5h7l4 4v13H7z" /><path d="M14 3.5v4h4" /></svg></span><span class="orbit__label mono">Docs</span></li>
+            <li class="orbit__item" data-ring="1"><span class="chip glass"><svg viewBox="0 0 24 24"><path d="M5 6.5h14v9H10l-5 4z" /></svg></span><span class="orbit__label mono">Chat</span></li>
+            <li class="orbit__item" data-ring="1"><span class="chip glass"><svg viewBox="0 0 24 24"><path d="M7.5 18.5a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17.6 9.6a4.5 4.5 0 0 1-.6 8.9z" /></svg></span><span class="orbit__label mono">Cloud</span></li>
+            <li class="orbit__item" data-ring="1"><span class="chip glass"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3" /><circle cx="17" cy="10" r="2.2" /><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5M15 15c2.5-.6 4.7.6 5.5 3" /></svg></span><span class="orbit__label mono">HR</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 TESTIMONIALS -->
+    <section class="section testimonials" aria-labelledby="t-title">
+      <div class="container">
+        <header class="section__head testimonials__head">
+          <div>
+            <p class="label mono" data-reveal>[ 07 — Customers ]</p>
+            <h2 class="display h2" id="t-title" data-split>Teams that stopped doing <span class="shimmer">busywork.</span></h2>
+          </div>
+          <div class="carousel__nav" data-reveal>
+            <button class="icon-btn glass" type="button" data-carousel-prev aria-label="Previous testimonial">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg>
+            </button>
+            <button class="icon-btn glass" type="button" data-carousel-next aria-label="Next testimonial">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6" /></svg>
+            </button>
+          </div>
+        </header>
+      </div>
+      <div class="carousel" id="carousel" role="region" aria-roledescription="carousel" aria-label="Customer testimonials" tabindex="0">
+        <ul class="carousel__track" role="list">
+          <li class="quote glass" aria-roledescription="slide" aria-label="1 of 5">
+            <div class="quote__inner">
+              <p class="quote__text">“We closed the books in two days instead of nine. The agents reconcile, flag the outliers and hand us a clean ledger by morning.”</p>
+              <div class="quote__by"><span class="avatar" aria-hidden="true">MR</span><span><b>Maya Reyes</b><span class="mono">VP Finance · Halvora</span></span></div>
+            </div>
+          </li>
+          <li class="quote glass" aria-roledescription="slide" aria-label="2 of 5">
+            <div class="quote__inner">
+              <p class="quote__text">“Our support queue used to grow every quarter. Now 71% of tickets resolve before anyone opens them.”</p>
+              <div class="quote__by"><span class="avatar" aria-hidden="true">DO</span><span><b>Daniel Okafor</b><span class="mono">Head of Support · Kestrel</span></span></div>
+            </div>
+          </li>
+          <li class="quote glass" aria-roledescription="slide" aria-label="3 of 5">
+            <div class="quote__inner">
+              <p class="quote__text">“It feels like hiring a team that never sleeps and documents everything it touches. Our auditors asked what we changed.”</p>
+              <div class="quote__by"><span class="avatar" aria-hidden="true">LS</span><span><b>Lena Sørensen</b><span class="mono">COO · Nordvik</span></span></div>
+            </div>
+          </li>
+          <li class="quote glass" aria-roledescription="slide" aria-label="4 of 5">
+            <div class="quote__inner">
+              <p class="quote__text">“We connected forty systems in an afternoon. The first workflow paid for the annual plan inside a month.”</p>
+              <div class="quote__by"><span class="avatar" aria-hidden="true">AK</span><span><b>Arjun Kapoor</b><span class="mono">Director of Ops · Lumenfreight</span></span></div>
+            </div>
+          </li>
+          <li class="quote glass" aria-roledescription="slide" aria-label="5 of 5">
+            <div class="quote__inner">
+              <p class="quote__text">“The guardrails sold our security team. Every action is signed, scoped and reversible.”</p>
+              <div class="quote__by"><span class="avatar" aria-hidden="true">HN</span><span><b>Hana Nakamura</b><span class="mono">CISO · Cirrus Bank</span></span></div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="carousel__dots" role="tablist" aria-label="Choose testimonial"></div>
+      <p class="visually-hidden" aria-live="polite" id="carousel-status"></p>
+    </section>
+
+    <!-- 10 PRICING -->
+    <section class="section pricing" id="pricing" aria-labelledby="pricing-title">
+      <div class="container">
+        <header class="section__head section__head--center">
+          <p class="label mono" data-reveal>[ 08 — Pricing ]</p>
+          <h2 class="display h2" id="pricing-title" data-split>Start free. Scale when it <span class="shimmer">pays</span> for itself.</h2>
+          <div class="billing" data-reveal>
+            <span class="billing__opt is-active" id="bill-monthly">Monthly</span>
+            <button class="billing__switch glass" type="button" role="switch" aria-checked="false" aria-labelledby="bill-annual" id="billing-switch">
+              <span class="billing__thumb"></span>
+            </button>
+            <span class="billing__opt" id="bill-annual">Annual <em class="mono">−20%</em></span>
+          </div>
+        </header>
+        <div class="tiers">
+          <article class="tier glass" data-reveal>
+            <p class="mono tier__name">[ Starter ]</p>
+            <p class="tier__price"><span class="tier__currency">$</span><span class="tier__amount" data-monthly="24" data-annual="19">24</span><span class="tier__per">/ seat / mo</span></p>
+            <p class="tier__note mono" data-note-monthly="Billed monthly" data-note-annual="Billed annually">Billed monthly</p>
+            <p class="tier__desc">For small teams putting their first agents to work.</p>
+            <ul class="tier__list" role="list">
+              <li>5 agents</li>
+              <li>10,000 runs per month</li>
+              <li>50 integrations</li>
+              <li>Community support</li>
+            </ul>
+            <a class="btn btn--glass btn--block" href="#cta" data-magnetic><span>Start free trial</span></a>
+          </article>
+          <article class="tier tier--featured glass glass--hero" data-reveal>
+            <p class="tier__badge mono">Recommended</p>
+            <p class="mono tier__name">[ Growth ]</p>
+            <p class="tier__price"><span class="tier__currency">$</span><span class="tier__amount" data-monthly="89" data-annual="71">89</span><span class="tier__per">/ seat / mo</span></p>
+            <p class="tier__note mono" data-note-monthly="Billed monthly" data-note-annual="Billed annually">Billed monthly</p>
+            <p class="tier__desc">For teams running agents in production every day.</p>
+            <ul class="tier__list" role="list">
+              <li>50 agents</li>
+              <li>500,000 runs per month</li>
+              <li>All 200+ integrations</li>
+              <li>Approval gates and audit log</li>
+              <li>Priority support</li>
+            </ul>
+            <a class="btn btn--primary btn--block" href="#cta" data-magnetic data-orb-pulse><span>Start free trial</span></a>
+          </article>
+          <article class="tier glass" data-reveal>
+            <p class="mono tier__name">[ Enterprise ]</p>
+            <p class="tier__price"><span class="tier__amount tier__amount--text">Custom</span></p>
+            <p class="tier__note mono">Annual agreement</p>
+            <p class="tier__desc">For organisations with scale, residency and compliance needs.</p>
+            <ul class="tier__list" role="list">
+              <li>Unlimited agents and runs</li>
+              <li>SSO, SCIM and custom roles</li>
+              <li>Dedicated region and VPC</li>
+              <li>99.99% uptime SLA</li>
+            </ul>
+            <a class="btn btn--glass btn--block" href="#cta" data-magnetic><span>Talk to sales</span></a>
+          </article>
+        </div>
+        <p class="pricing__foot mono" data-reveal>14-day free trial on every plan · No credit card required</p>
+      </div>
+    </section>
+
+    <!-- 11 SECURITY -->
+    <section class="section security" id="security" aria-labelledby="sec-title">
+      <div class="container security__inner">
+        <header class="section__head">
+          <p class="label mono" data-reveal>[ 09 — Security ]</p>
+          <h2 class="display h2" id="sec-title" data-split>Security your <span class="shimmer">auditors</span> will sign off on.</h2>
+          <p class="lead" data-reveal>Every agent action is scoped, signed and logged. Your data is encrypted end to end and never used to train models.</p>
+        </header>
+        <div class="security__visual" data-reveal>
+          <div class="cipher glass">
+            <div class="cipher__head mono"><span>Payload</span><span class="cipher__state" id="cipher-state">Encrypted</span></div>
+            <p class="cipher__line mono" id="cipher-line" aria-label="Example record shown encrypted">invoice_total: 48,209.00 USD</p>
+            <div class="cipher__foot mono"><span>AES-256 at rest</span><span>TLS 1.3 in transit</span></div>
+          </div>
+          <ul class="badges" role="list">
+            <li class="badge glass"><b>SOC 2</b><span class="mono">Type II</span></li>
+            <li class="badge glass"><b>GDPR</b><span class="mono">Compliant</span></li>
+            <li class="badge glass"><b>ISO</b><span class="mono">27001</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 FINAL CTA -->
+    <section class="cta" id="cta" aria-labelledby="cta-title">
+      <div class="container cta__inner">
+        <p class="label mono" data-reveal>[ 10 — Early access ]</p>
+        <h2 class="display cta__title" id="cta-title" data-split>The future runs on <span class="shimmer">%VITE_BRAND%.</span></h2>
+        <form class="signup glass glass--hero" id="signup" novalidate data-reveal>
+          <label class="visually-hidden" for="signup-email">Work email</label>
+          <input class="signup__input" id="signup-email" name="email" type="email" autocomplete="email" placeholder="you@company.com" required>
+          <button class="btn btn--primary" type="submit" data-magnetic data-orb-pulse><span>Get Early Access</span></button>
+        </form>
+        <p class="signup__status mono" id="signup-status" role="status" aria-live="polite">Free for 14 days. No credit card.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <a class="logo" href="#top" aria-label="%VITE_BRAND% home">
+            <svg class="logo__mark" viewBox="0 0 120 120" fill="none" aria-hidden="true"><circle cx="60" cy="60" r="52" /><path d="M44 78V42l32 36V42" /></svg>
+            <span class="logo__word">%VITE_BRAND%</span>
+          </a>
+          <p>%VITE_TAGLINE%</p>
+          <ul class="socials" role="list">
+            <li><a href="https://x.com" aria-label="%VITE_BRAND% on X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l16 16M20 4 4 20" /></svg></a></li>
+            <li><a href="https://github.com" aria-label="%VITE_BRAND% on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-4 1.3-4-2-6-2.5m12 4.5v-3.4a3 3 0 0 0-.8-2.3c2.7-.3 5.6-1.3 5.6-6a4.6 4.6 0 0 0-1.3-3.2 4.3 4.3 0 0 0-.1-3.2s-1-.3-3.4 1.3a11.7 11.7 0 0 0-6 0C6.6 2.7 5.6 3 5.6 3a4.3 4.3 0 0 0-.1 3.2A4.6 4.6 0 0 0 4.2 9.4c0 4.6 2.9 5.7 5.6 6a3 3 0 0 0-.8 2.3V21" /></svg></a></li>
+            <li><a href="https://linkedin.com" aria-label="%VITE_BRAND% on LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3" /><path d="M8 10.5V16M8 7.8v.1M11.5 16v-5.5M11.5 13c0-1.6 1-2.6 2.4-2.6s2.1.9 2.1 2.6V16" /></svg></a></li>
+            <li><a href="https://youtube.com" aria-label="%VITE_BRAND% on YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="4" /><path d="m10.5 9.5 4 2.5-4 2.5z" /></svg></a></li>
+          </ul>
+        </div>
+        <nav class="footer__cols" aria-label="Footer">
+          <div><h3 class="mono">Product</h3><ul role="list"><li><a href="#product" data-nav>Capabilities</a></li><li><a href="#integrations" data-nav>Integrations</a></li><li><a href="#pricing" data-nav>Pricing</a></li><li><a href="./docs.html">Changelog</a></li></ul></div>
+          <div><h3 class="mono">Company</h3><ul role="list"><li><a href="#top" data-nav>About</a></li><li><a href="#top" data-nav>Careers</a></li><li><a href="#showcase" data-nav>Customers</a></li><li><a href="#cta" data-nav>Contact</a></li></ul></div>
+          <div><h3 class="mono">Resources</h3><ul role="list"><li><a href="./docs.html">Documentation</a></li><li><a href="./docs.html">API reference</a></li><li><a href="#security" data-nav>Security</a></li><li><a href="#top" data-nav>Status</a></li></ul></div>
+        </nav>
+      </div>
+      <div class="footer__bottom mono">
+        <span>© 2026 %VITE_BRAND_LEGAL%</span>
+        <span class="footer__status"><i></i>All systems operational</span>
+      </div>
+    </div>
+    <p class="footer__wordmark" aria-hidden="true">%VITE_BRAND%</p>
+  </footer>
+
+  <!-- Overlays -->
+  <div class="transition" id="transition" aria-hidden="true"><span class="transition__edge"></span></div>
+  <div class="cursor" aria-hidden="true"><span class="cursor__halo"></span><span class="cursor__dot"></span></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

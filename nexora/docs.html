@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Docs | %VITE_BRAND%</title>
+  <meta name="description" content="Get started with %VITE_BRAND%: install the CLI, connect your first system and ship an agent workflow in minutes.">
+  <meta name="theme-color" content="#05060A">
+  <meta name="color-scheme" content="dark">
+  <link rel="canonical" href="%VITE_SITE_URL%/docs.html">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="%VITE_BRAND%">
+  <meta property="og:title" content="Docs | %VITE_BRAND%">
+  <meta property="og:description" content="Install the CLI, connect your first system and ship an agent workflow in minutes.">
+  <meta property="og:url" content="%VITE_SITE_URL%/docs.html">
+  <meta property="og:image" content="%VITE_SITE_URL%/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <script>
+    (function () {
+      var d = document.documentElement;
+      d.classList.add('js');
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('reduced-motion');
+      try { if (sessionStorage.getItem('nx:transition')) d.classList.add('is-arriving'); } catch (e) {}
+    })();
+  </script>
+  <style>html { background: #05060a; }</style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <canvas class="stage" id="stage" aria-hidden="true"></canvas>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <nav class="nav__pill glass" aria-label="Primary">
+      <a class="logo" href="./index.html" aria-label="%VITE_BRAND% home">
+        <svg class="logo__mark" viewBox="0 0 120 120" fill="none" aria-hidden="true"><circle cx="60" cy="60" r="52" /><path d="M44 78V42l32 36V42" /></svg>
+        <span class="logo__word">%VITE_BRAND%</span>
+      </a>
+      <ul class="nav__links" id="nav-links">
+        <li><a href="./index.html#product">Product</a></li>
+        <li><a href="./index.html#how">Solutions</a></li>
+        <li><a href="./index.html#pricing">Pricing</a></li>
+        <li><a href="./docs.html" aria-current="true">Docs</a></li>
+      </ul>
+      <a class="btn btn--primary btn--sm nav__cta" href="./index.html#cta" data-magnetic><span>Get Started</span></a>
+      <button class="nav__toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="Open menu"><span></span><span></span></button>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="docs-hero" aria-labelledby="docs-title">
+      <div class="container">
+        <div class="docs-hero__inner">
+          <p class="label mono">[ Documentation · v4.0 ]</p>
+          <h1 class="display" id="docs-title" data-split="manual">Ship your first <span class="shimmer">agent</span> in five minutes.</h1>
+          <p class="lead">Install the CLI, connect a system and describe the outcome you want. The agent drafts the workflow; you approve it.</p>
+          <div class="code glass" data-reveal>
+            <div class="code__head mono"><span>Terminal</span><button class="code__copy mono" id="copy-install" type="button">Copy</button></div>
+<pre><code><span id="install-cmd">npm install -g @nexora/cli</span>
+<span class="k">nexora</span> login
+<span class="k">nexora</span> connect <span class="s">ledger</span> <span class="s">crm</span>
+<span class="k">nexora</span> agents create <span class="s">"Reconcile open invoices every morning"</span>
+<span class="c"># ✓ Workflow drafted · 6 steps · awaiting approval</span></code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="container" aria-label="Guides">
+      <div class="docs-grid">
+        <a class="card glass doc-card" href="#main" data-tilt data-reveal>
+          <p class="mono">[ 01 ]</p>
+          <h2>Quickstart</h2>
+          <p>Install, authenticate and run your first workflow end to end.</p>
+          <span class="mono doc-card__go">Read guide →</span>
+        </a>
+        <a class="card glass doc-card" href="#main" data-tilt data-reveal>
+          <p class="mono">[ 02 ]</p>
+          <h2>Agents</h2>
+          <p>How agents plan, act and verify, and how to scope what they can touch.</p>
+          <span class="mono doc-card__go">Read guide →</span>
+        </a>
+        <a class="card glass doc-card" href="#main" data-tilt data-reveal>
+          <p class="mono">[ 03 ]</p>
+          <h2>Workflows</h2>
+          <p>Compose steps on the canvas or in code, with approval gates and retries.</p>
+          <span class="mono doc-card__go">Read guide →</span>
+        </a>
+        <a class="card glass doc-card" href="#main" data-tilt data-reveal>
+          <p class="mono">[ 04 ]</p>
+          <h2>API reference</h2>
+          <p>Typed REST endpoints and webhooks for every object in %VITE_BRAND%.</p>
+          <span class="mono doc-card__go">Read reference →</span>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__bottom mono">
+        <span>© 2026 %VITE_BRAND_LEGAL%</span>
+        <a href="./index.html">← Back to %VITE_BRAND%</a>
+      </div>
+    </div>
+    <p class="footer__wordmark" aria-hidden="true">%VITE_BRAND%</p>
+  </footer>
+
+  <div class="transition" id="transition" aria-hidden="true"><span class="transition__edge"></span></div>
+  <div class="cursor" aria-hidden="true"><span class="cursor__halo"></span><span class="cursor__dot"></span></div>
+  <script type="module" src="/src/docs.js"></script>
+</body>
+</html>
