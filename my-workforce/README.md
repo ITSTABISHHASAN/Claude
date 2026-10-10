@@ -15,7 +15,15 @@ An AI agent command center in the Zedtronix style: one **Main Agent** that plans
 
 - **Main Agent:** write a brief and press **Dispatch**. It picks the agents the brief needs (or the ones you choose under *Route to*), runs them in parallel and writes a summary.
 - **One agent:** select an agent card (or its node in the network) to open its workspace, then type a task or pick a quick action.
-- **Deliverables:** every result is kept, with tabs per agent, **Copy** and **Download .md**.
+- **Deliverables:** every result is kept, with tabs per agent, **Copy**, **.md** and **Download Excel**.
+
+## Excel export
+
+Every agent's work downloads as an Excel workbook (`.xlsx`), built in the browser with no add-ons:
+
+- **Mission:** one workbook with a *Summary* sheet (brief, plan, status, summary) and one sheet per agent (`01 SEO`, `02 3D`, `03 SMM`, `04 Ads`, `05 Leads`, `06 Dev`).
+- **Single agent:** *Download Excel* in the agent's workspace saves just that task.
+- Tables in an agent's answer become real spreadsheet columns with bold headers, and plain numbers stay numeric. Agents are told to put every list (keywords, posts, ads, leads, specs, endpoints) in tables so it lands in columns.
 
 ## Engines (Settings)
 

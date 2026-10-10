@@ -734,7 +734,10 @@ textarea.field { min-height: 108px; }
           <label class="sr" for="runSel">Choose a run</label>
           <select class="select" id="runSel"></select>
           <button type="button" class="btn" id="copyBtn">Copy</button>
-          <button type="button" class="btn" id="dlBtn">Download .md</button>
+          <button type="button" class="btn primary" id="xlsBtn">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/><path d="M2.5 6.2h11M2.5 9.8h11M6.2 6.2v7.3"/></svg>Download Excel
+          </button>
+          <button type="button" class="btn" id="dlBtn">.md</button>
         </div>
       </header>
       <div class="tabs" id="tabs" role="tablist" aria-label="Deliverable sections"></div>
@@ -795,6 +798,7 @@ textarea.field { min-height: 108px; }
           </button>
           <button type="button" class="btn" id="wsStop" hidden>Stop</button>
           <button type="button" class="btn" id="wsCopy">Copy result</button>
+          <button type="button" class="btn" id="wsXls">Download Excel</button>
           <span class="hint">Ctrl + Enter to run</span>
         </div>
       </form>
@@ -884,7 +888,7 @@ textarea.field { min-height: 108px; }
     leads: '<circle cx="9" cy="8" r="3.4"/><path d="M3 19.5c.8-3.3 3.1-5.2 6-5.2s5.2 1.9 6 5.2M18 7.5v6M15 10.5h6"/>',
     dev: '<path d="M8.5 7L3.5 12l5 5M15.5 7l5 5-5 5M13.4 4.5l-2.8 15"/>',
   };
-  const FORMAT = 'Write in Markdown with short ## headings, bullet lists and tables where they help. Be specific to the brief: no generic filler. Never invent statistics, prices, search volumes, reviews, people or contact details; where a number is needed and you do not have it, say what to measure or give a labelled assumption. End with a short "Next steps" list.';
+  const FORMAT = 'Write in Markdown with short ## headings. Your work is exported to Excel, so put every list of items (keywords, posts, ads, audiences, budgets, leads, specs, tasks, endpoints) in a Markdown table with clear column headers, one item per row; use bullets only for short notes. Be specific to the brief: no generic filler. Never invent statistics, prices, search volumes, reviews, people or contact details; where a number is needed and you do not have it, say what to measure or give a labelled assumption. End with a short "Next steps" list.';
   const AGENTS = [
     {
       id: 'seo', no: 1, name: 'SEO · AEO · GEO', short: 'SEO', mins: 120,
@@ -1126,6 +1130,8 @@ textarea.field { min-height: 108px; }
     }
     return out.join(' ') || 'your offer';
   }
+  // Quick actions end in "…for: <subject>", so prefer the words after the last colon.
+  const subjectOf = text => { const m = String(text).match(/:\s*([^:\n][^:]*)$/); return topicOf(m && m[1].trim() ? m[1] : text); };
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
   const DEMO_NOTE = '> **Demo draft.** Built from a template around your brief, not researched. Connect Claude in Settings for real, tailored work.\n\n';
 
@@ -1459,7 +1465,7 @@ ${parts}`;
     const prompt = run.kind === 'mission'
       ? `Client brief:\n"""${run.brief}"""\n\nYour assignment from the Main Agent: ${it.title}\n${it.instructions}\n\n${FORMAT}`
       : `${it.instructions}\n\n${FORMAT}`;
-    const demo = (sig, onText) => typeOut(DEMO_NOTE + DEMO[it.agent](topicOf(run.kind === 'mission' ? run.brief : it.instructions), run.brief), onText, sig);
+    const demo = (sig, onText) => typeOut(DEMO_NOTE + DEMO[it.agent](run.kind === 'mission' ? topicOf(run.brief) : subjectOf(it.instructions), run.brief), onText, sig);
     try {
       const text = await ask({
         system: agent.system, prompt, signal, demo,
@@ -2004,7 +2010,7 @@ ${parts}`;
     }
     const r = S.runs.find(x => x.id === selRun);
     const panel = $('#outPanel');
-    if (!r) { $('#tabs').innerHTML = ''; panel.innerHTML = EMPTY_OUT; $('#copyBtn').disabled = $('#dlBtn').disabled = true; return; }
+    if (!r) { $('#tabs').innerHTML = ''; panel.innerHTML = EMPTY_OUT; $('#copyBtn').disabled = $('#dlBtn').disabled = $('#xlsBtn').disabled = true; return; }
     const tabs = r.kind === 'mission' ? [{ id: 'summary', label: 'Summary', icon: null }] : [];
     for (const it of r.items) tabs.push({ id: it.id, label: BY_ID[it.agent].short, icon: it.agent, st: it.status });
     if (!tabs.some(t => t.id === selTab)) selTab = tabs[0]?.id;
@@ -2022,6 +2028,7 @@ ${parts}`;
     panel.innerHTML = html;
     panel.scrollTop = keep;
     $('#copyBtn').disabled = $('#dlBtn').disabled = !currentText();
+    $('#xlsBtn').disabled = !r.items.some(it => it.output) && !r.summary;
   }
   $('#runSel').addEventListener('change', e => { selRun = e.target.value; selTab = 'summary'; mark('out'); });
   $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { selTab = b.dataset.tab; mark('out'); } });
@@ -2029,22 +2036,178 @@ ${parts}`;
   $('#dlBtn').addEventListener('click', () => {
     const r = S.runs.find(x => x.id === selRun);
     const name = `my-workforce-${(topicOf(r?.brief || 'deliverable')).replace(/\s+/g, '-')}-${selTab === 'summary' ? 'summary' : (BY_ID[r?.items.find(x => x.id === selTab)?.agent]?.short || 'task').toLowerCase()}.md`;
-    downloadText(name, currentText());
+    downloadFile(name, currentText(), 'text/markdown');
   });
+  $('#xlsBtn').addEventListener('click', () => {
+    const r = S.runs.find(x => x.id === selRun);
+    if (r) downloadFile(xlsxName(r), runWorkbook(r), XLSX_MIME);
+  });
+
+  /* ================= Excel export (.xlsx, written in the browser) ================= */
+  // A small Office Open XML writer: one sheet per agent, Markdown tables become
+  // real columns, headings bold. Stored (uncompressed) zip, so no library needed.
+  const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  function zipStore(files) {
+    const enc = new TextEncoder(), parts = [], central = [];
+    const d = new Date();
+    const dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+    const dosDate = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    let offset = 0;
+    for (const f of files) {
+      const name = enc.encode(f.name), data = enc.encode(f.data), crc = crc32(data);
+      const lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+      lh.setUint16(10, dosTime, true); lh.setUint16(12, dosDate, true); lh.setUint32(14, crc, true);
+      lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+      const ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+      ch.setUint16(12, dosTime, true); ch.setUint16(14, dosDate, true); ch.setUint32(16, crc, true);
+      ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true);
+      ch.setUint32(42, offset, true);
+      parts.push(new Uint8Array(lh.buffer), name, data);
+      central.push(new Uint8Array(ch.buffer), name);
+      offset += 30 + name.length + data.length;
+    }
+    const cdSize = central.reduce((n, p) => n + p.length, 0);
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+    end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+    const all = [...parts, ...central, new Uint8Array(end.buffer)];
+    const out = new Uint8Array(all.reduce((n, p) => n + p.length, 0));
+    let o = 0; for (const p of all) { out.set(p, o); o += p.length; }
+    return out;
+  }
+  const xmlEsc = v => String(v).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F￾￿]/g, '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const colName = i => { let s = ''; for (i++; i; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s; return s; };
+  // Cell styles: 0 table cell (wraps), 1 table header, 2 title, 3 heading, 4 code,
+  // 5 label, 6 free text line (no wrap, spills across empty cells to the right)
+  const ST = { text: 0, th: 1, title: 2, h: 3, code: 4, label: 5, line: 6 };
+  const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="5"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><color rgb="FF0B2A7A"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="15"/><color rgb="FF0B2A7A"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="12"/><color rgb="FF1F5FE0"/><name val="Calibri"/><family val="2"/></font><font><sz val="10"/><name val="Consolas"/><family val="3"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDCE8FF"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FF9DB4E8"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="7"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  function sheetXml(rows) {
+    const widths = [];
+    const body = rows.map((row, r) => {
+      const cells = row.map((cell, c) => {
+        if (cell === null || cell === undefined || cell === '') return '';
+        const { v, s = ST.text } = typeof cell === 'object' ? cell : { v: cell };
+        if (v === '' || v === null || v === undefined) return '';
+        const ref = colName(c) + (r + 1);
+        if (s === ST.text || s === ST.th || s === ST.label) widths[c] = Math.max(widths[c] || 0, Math.min(60, String(v).length + 2));
+        if (typeof v === 'number' && isFinite(v)) return `<c r="${ref}" s="${s}"><v>${v}</v></c>`;
+        return `<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(String(v).slice(0, 32000))}</t></is></c>`;
+      }).join('');
+      return `<row r="${r + 1}">${cells}</row>`;
+    }).join('');
+    const cols = widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${Math.max(10, w || 10)}" customWidth="1"/>`).join('');
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${cols ? `<cols>${cols}</cols>` : ''}<sheetData>${body}</sheetData></worksheet>`;
+  }
+  function buildXlsx(sheets) {
+    const used = new Set();
+    const named = sheets.map(sh => {
+      let base = sh.name.replace(/[\[\]:*?\/\\]/g, ' ').replace(/^'+|'+$/g, '').trim().slice(0, 31) || 'Sheet';
+      let n = base, k = 2;
+      while (used.has(n.toLowerCase())) n = base.slice(0, 28) + ' ' + k++;
+      used.add(n.toLowerCase());
+      return { name: n, rows: sh.rows };
+    });
+    const M = 'http://schemas.openxmlformats.org/', X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+    return zipStore([
+      { name: '[Content_Types].xml', data: `${X}<Types xmlns="${M}package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${named.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>` },
+      { name: '_rels/.rels', data: `${X}<Relationships xmlns="${M}package/2006/relationships"><Relationship Id="rId1" Type="${M}officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+      { name: 'xl/workbook.xml', data: `${X}<workbook xmlns="${M}spreadsheetml/2006/main" xmlns:r="${M}officeDocument/2006/relationships"><sheets>${named.map((sh, i) => `<sheet name="${xmlEsc(sh.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>` },
+      { name: 'xl/_rels/workbook.xml.rels', data: `${X}<Relationships xmlns="${M}package/2006/relationships">${named.map((_, i) => `<Relationship Id="rId${i + 1}" Type="${M}officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${named.length + 1}" Type="${M}officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+      { name: 'xl/styles.xml', data: STYLES },
+      ...named.map((sh, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, data: sheetXml(sh.rows) })),
+    ]);
+  }
+  // Markdown → spreadsheet rows. Tables keep their columns; numbers stay numbers.
+  const plain = s => String(s)
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '$1 ($2)')
+    .replace(/\*\*([^*]+)\*\*/g, '$1').replace(/__([^_]+)__/g, '$1')
+    .replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s.,;:!?)]|$)/g, '$1$2')
+    .replace(/`([^`]+)`/g, '$1').replace(/<br\s*\/?>/gi, ' ').trim();
+  const cellVal = s => { const t = plain(s); return /^-?\d+(\.\d+)?$/.test(t) && t.length < 16 ? Number(t) : t; };
+  function mdRows(src) {
+    const L = String(src || '').replace(/\r/g, '').split('\n'), rows = [];
+    const cells = row => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+    const gap = () => { if (rows.length && rows[rows.length - 1].length) rows.push([]); };
+    let i = 0;
+    while (i < L.length) {
+      const line = L[i];
+      let m;
+      if (/^\s*```/.test(line)) {
+        i++;
+        while (i < L.length && !/^\s*```/.test(L[i])) rows.push([{ v: L[i++].replace(/\t/g, '    '), s: ST.code }]);
+        i++; rows.push([]); continue;
+      }
+      if ((m = line.match(/^#{1,6}\s+(.*)$/))) { gap(); rows.push([{ v: plain(m[1]), s: ST.h }]); i++; continue; }
+      if (/^\s*\|/.test(line) && i + 1 < L.length && /^\s*\|?\s*:?-{2,}/.test(L[i + 1])) {
+        const head = cells(line);
+        rows.push(head.map(h => ({ v: plain(h), s: ST.th })));
+        i += 2;
+        while (i < L.length && /^\s*\|/.test(L[i])) { const r = cells(L[i++]); rows.push(head.map((_, k) => cellVal(r[k] || ''))); }
+        rows.push([]); continue;
+      }
+      if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line) || !line.trim()) { i++; continue; }
+      const txt = v => rows.push([{ v, s: ST.line }]);
+      if ((m = line.match(/^\s*>\s?(.*)$/))) { txt(plain(m[1])); i++; continue; }
+      if ((m = line.match(/^\s*[-*+]\s+(.*)$/))) { txt('• ' + plain(m[1])); i++; continue; }
+      if ((m = line.match(/^\s*(\d+)[.)]\s+(.*)$/))) { txt(`${m[1]}. ${plain(m[2])}`); i++; continue; }
+      txt(plain(line)); i++;
+    }
+    while (rows.length && !rows[rows.length - 1].length) rows.pop();
+    return rows;
+  }
+  const lbl = (k, v) => [{ v: k, s: ST.label }, { v, s: ST.line }];
+  const stamp = t => new Date(t || Date.now()).toLocaleString();
+  function agentSheet(run, it) {
+    const a = BY_ID[it.agent];
+    const rows = [[{ v: `${a.name} · Agent ${pad(a.no)}`, s: ST.title }], lbl('Task', it.title)];
+    if (run.kind !== 'mission') rows.push(lbl('Brief', run.brief));
+    rows.push(lbl('Status', STATE_TEXT[it.status] || it.status), lbl('Delivered', it.ended ? stamp(it.ended) : '—'), []);
+    rows.push(...mdRows(it.output));
+    if (it.error) rows.push([], lbl('Error', it.error));
+    return { name: `${pad(a.no)} ${a.short}`, rows };
+  }
+  function runWorkbook(run, only) {
+    const sheets = [];
+    if (run.kind === 'mission' && !only) {
+      const rows = [[{ v: 'My Workforce · Mission report', s: ST.title }], lbl('Brief', run.brief), lbl('Created', stamp(run.created)),
+        lbl('Status', run.status === 'done' ? 'Complete' : (STATE_TEXT[run.status] || run.status)), lbl('Approach', run.plan || ''), [],
+        [{ v: 'Plan', s: ST.h }],
+        ['Agent', 'Task', 'Status', 'Instructions', 'Sheet'].map(v => ({ v, s: ST.th })),
+        ...run.items.map(it => [BY_ID[it.agent].name, it.title, STATE_TEXT[it.status] || it.status, it.instructions, `${pad(BY_ID[it.agent].no)} ${BY_ID[it.agent].short}`])];
+      if (run.summary) rows.push([], [{ v: 'Summary', s: ST.h }], ...mdRows(run.summary));
+      sheets.push({ name: 'Summary', rows });
+    }
+    for (const it of only ? [only] : run.items) if (it.output || it.error) sheets.push(agentSheet(run, it));
+    if (!sheets.length) sheets.push({ name: 'Summary', rows: [[{ v: 'No output yet', s: ST.title }]] });
+    return buildXlsx(sheets);
+  }
+  function xlsxName(run, it) {
+    const d = new Date(run.created);
+    const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const who = it ? BY_ID[it.agent].short.toLowerCase() : run.kind === 'mission' ? 'mission' : BY_ID[run.items[0].agent].short.toLowerCase();
+    return `my-workforce-${who}-${(run.kind === 'mission' ? topicOf(run.brief) : subjectOf(run.brief)).replace(/\s+/g, '-')}-${day}.xlsx`;
+  }
 
   async function copyText(text) {
     if (!text) return;
     try { await navigator.clipboard.writeText(text); toast('Copied'); }
     catch { toast('Copy is blocked here. Select the text and copy it instead.'); }
   }
-  async function downloadText(filename, text) {
-    if (!text) return;
+  async function downloadFile(filename, data, type) {
+    if (!data || !data.length) return;
+    const blob = new Blob([data], { type });
     if (downloadsNs) {
-      try { await downloadsNs.save({ filename, data: text }); } catch (e) { if (e?.code !== 'declined') toast('The file could not be saved.'); }
+      try { await downloadsNs.save({ filename, data: blob }); } catch (e) { if (e?.code !== 'declined') toast('The file could not be saved.'); }
       return;
     }
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([text], { type: 'text/markdown' }));
+    a.href = URL.createObjectURL(blob);
     a.download = filename;
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -2097,7 +2260,7 @@ ${parts}`;
     const out = $('#wsOut'), keep = out.scrollTop;
     out.innerHTML = cur ? itemBody(cur.it) : `<div class="empty"><span>${inMission ? 'This agent is busy on the current mission.' : 'No work yet. Give this agent a task to see the result here.'}</span></div>`;
     out.scrollTop = keep;
-    $('#wsCopy').disabled = !cur?.it.output;
+    $('#wsCopy').disabled = $('#wsXls').disabled = !cur?.it.output;
   }
   $('#wsPresets').addEventListener('click', e => {
     const b = e.target.closest('[data-preset]');
@@ -2118,6 +2281,10 @@ ${parts}`;
   wsInput.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $('#wsForm').requestSubmit(); } });
   $('#wsStop').addEventListener('click', () => agentCtl[wsAgent]?.abort());
   $('#wsCopy').addEventListener('click', () => { const x = agentItems(wsAgent).find(y => y.it.id === wsView); copyText(x?.it.output || ''); });
+  $('#wsXls').addEventListener('click', () => {
+    const x = agentItems(wsAgent).find(y => y.it.id === wsView);
+    if (x) downloadFile(xlsxName(x.run, x.it), runWorkbook(x.run, x.it), XLSX_MIME);
+  });
   $('#wsClose').addEventListener('click', closeWs);
   wsBackdrop.addEventListener('click', e => { if (e.target === wsBackdrop) closeWs(); });
 
