@@ -321,6 +321,7 @@ p { margin: 0; }
 .cmd-card { grid-column: span 7; }
 .net-card { grid-column: span 5; }
 .agents-card { grid-column: span 12; }
+.research-card { grid-column: span 12; }
 .out-card { grid-column: span 8; }
 .events-card { grid-column: span 4; }
 .load-card { grid-column: span 12; }
@@ -428,6 +429,28 @@ textarea.field { min-height: 108px; }
 .skills span { font-size: 11.5px; color: var(--ink-2); padding: 3px 8px; border-radius: 999px; border: 1px solid var(--edge); background: var(--chip); }
 .agent-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--gridline); padding-top: 10px; }
 .agent-count { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.agent-daily { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); }
+.agent-daily i { width: 7px; height: 7px; border-radius: 50%; flex: none; border: 1px solid var(--ink-3); }
+.agent-daily.on i { border: 0; background: var(--good); }
+
+/* Research desk */
+.res-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.res-form label { font-size: 12.5px; font-weight: 600; color: var(--ink-2); min-width: 0; }
+.res-form .route { grid-column: 1 / -1; }
+.field.sm { display: block; margin-top: 6px; padding: 9px 12px; font-size: 14px; }
+.desks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.desk { display: grid; gap: 10px; align-content: start; min-width: 0; padding: 14px; border-radius: var(--r-md); background: var(--chip); border: 1px solid var(--edge); }
+.desk[data-s="running"] { border-color: var(--accent-line); background: var(--accent-soft); }
+.desk-meta { font-size: 13px; color: var(--ink-2); }
+.desk-meta strong { color: var(--ink); font-weight: 600; }
+.days { display: flex; gap: 6px; flex-wrap: wrap; }
+.day { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; font: 600 10.5px var(--font-body); color: var(--ink-3); border: 1px solid var(--edge); background: var(--chip); }
+.day.on { color: #fff; background: var(--accent); border-color: transparent; box-shadow: 0 0 12px -4px var(--glow); }
+.day.today { outline: 1px dashed var(--accent-line); outline-offset: 2px; }
+.res-note { font-size: 12.5px; color: var(--ink-2); display: flex; gap: 8px; align-items: flex-start; }
+.res-note .ico { margin-top: 1px; }
+.check { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px; font-weight: 500 !important; }
+.check input { margin-top: 3px; accent-color: var(--accent); }
 .agent-open::after { content: ""; position: absolute; inset: 0; border-radius: var(--r-md); }
 .agent-open { position: static; }
 
@@ -552,9 +575,11 @@ textarea.field { min-height: 108px; }
   .cmd-card, .net-card, .out-card { grid-column: span 12; }
   .events-card { grid-column: span 12; }
   .agents { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .res-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
   .loads { grid-template-columns: minmax(0, 1fr); }
+  .desks, .res-form { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
   .agents { grid-template-columns: minmax(0, 1fr); }
@@ -713,6 +738,26 @@ textarea.field { min-height: 108px; }
       <div class="net" id="net" role="group" aria-label="Agent network"></div>
     </article>
 
+    <section class="glass card research-card" aria-labelledby="resTitle">
+      <header class="card-head">
+        <div>
+          <h2 id="resTitle">Daily research desk</h2>
+          <p class="card-sub">The SEO and Social Media agents dig into keywords, search changes and every platform's algorithm each day, then use the latest briefing in all their work.</p>
+        </div>
+        <button type="button" class="chip" id="autoBtn" aria-pressed="true">Auto daily · On</button>
+      </header>
+      <form class="res-form" id="resForm" novalidate>
+        <label>Business or niche<input class="field sm" id="resNiche" autocomplete="off" placeholder="e.g. vegan protein snacks for gym-goers"></label>
+        <label>Seed keywords<input class="field sm" id="resSeeds" autocomplete="off" placeholder="comma separated, optional"></label>
+        <label>Market<input class="field sm" id="resRegion" autocomplete="off" placeholder="e.g. United Kingdom, or global"></label>
+        <div class="route" role="group" aria-label="Platforms the Social Media agent researches">
+          <span class="eyebrow">Platforms</span><span id="platChips" style="display:contents"></span>
+        </div>
+      </form>
+      <div class="desks" id="desks"></div>
+      <p class="res-note" id="resNote"></p>
+    </section>
+
     <section class="glass card agents-card" aria-labelledby="agentsTitle">
       <header class="card-head">
         <div>
@@ -832,6 +877,7 @@ textarea.field { min-height: 108px; }
         <option value="claude-sonnet-5-5">Claude Sonnet 5.5 (faster, lower cost)</option>
         <option value="claude-haiku-5-5">Claude Haiku 5.5 (fastest, lowest cost)</option>
       </select>
+      <label class="check" for="apiWeb"><input type="checkbox" id="apiWeb"><span>Live web research for the SEO and Social Media agents (Opus 5.5 and Sonnet 5.5; each search is billed by Anthropic)</span></label>
       <p class="card-sub" style="margin-top:8px">The key is saved in this browser only and sent only to api.anthropic.com. Use a key you can revoke, and do not use this option on a shared computer.</p>
     </div>
     <p class="err" id="setErr" aria-live="polite"></p>
@@ -892,14 +938,16 @@ textarea.field { min-height: 108px; }
   const AGENTS = [
     {
       id: 'seo', no: 1, name: 'SEO · AEO · GEO', short: 'SEO', mins: 120,
-      role: 'Keyword specialist optimizing content for search engines, answer engines and AI assistants',
-      skills: ['Keyword research', 'On-page SEO', 'AEO answers', 'GEO for AI search', 'Content briefs'],
+      role: 'Keyword specialist who researches keywords and search changes every day and optimizes content for search engines, answer engines and AI assistants',
+      skills: ['Daily keyword research', 'Keyword deep dives', 'On-page SEO', 'AEO answers', 'GEO for AI search', 'Algorithm updates'],
+      research: { title: 'Daily keyword & search briefing', desk: 'KEYWORD & SEARCH BRIEFING' },
       presets: [
+        ['Keyword deep dive', 'Deep-dive keyword research: seed terms, related and rising queries, questions people ask, long-tail terms, search intent, difficulty estimate, priority and the page each should target, for: '],
         ['Keyword cluster', 'Build a keyword cluster (primary, secondary, long-tail, questions) with search intent and priority for: '],
         ['Optimize my content', 'Rewrite and optimize this content for SEO, answer engines and AI assistants. Keep the meaning, add the right keywords naturally:\n\n'],
         ['AEO FAQ block', 'Write an answer-engine-ready FAQ section (8 questions with concise, quotable answers and FAQPage schema JSON-LD) for: '],
       ],
-      system: 'You are Agent 1 of My Workforce: a senior SEO, AEO (answer engine optimization) and GEO (generative engine optimization) specialist. You do keyword research and clustering by intent, write and optimize content with keywords used naturally, craft concise quotable answers for featured snippets and voice/answer engines, and make content easy for AI assistants such as ChatGPT, Gemini, Perplexity and Claude to cite (clear entities, facts, structure, schema markup). Search volumes and difficulty are estimates unless the user supplies data; label them that way.',
+      system: 'You are Agent 1 of My Workforce: a senior SEO, AEO (answer engine optimization) and GEO (generative engine optimization) specialist. You do keyword research and clustering by intent, write and optimize content with keywords used naturally, craft concise quotable answers for featured snippets and voice/answer engines, and make content easy for AI assistants such as ChatGPT, Gemini, Perplexity and Claude to cite (clear entities, facts, structure, schema markup). You research every day: rising and new queries, questions people ask, competitor movements, Google core and spam updates, SERP feature and AI Overview changes, and how AI assistants pick the sources they cite. Search volumes and difficulty are estimates unless the user supplies data or you found them in a cited source; label them that way.',
     },
     {
       id: 'model3d', no: 2, name: '3D MODELER', short: '3D', mins: 240,
@@ -914,14 +962,17 @@ textarea.field { min-height: 108px; }
     },
     {
       id: 'smm', no: 3, name: 'SOCIAL MEDIA', short: 'SMM', mins: 150,
-      role: 'Manages social channels and creates ready-to-post content for each platform',
-      skills: ['Content calendars', 'Captions & hooks', 'Reels & carousels', 'Hashtags', 'Community replies'],
+      role: 'Creates posts for every social platform and deep-dives each platform\'s algorithm and trends every day',
+      skills: ['Every platform', 'Algorithm deep dives', 'Daily trend research', 'Posts & captions', 'Reels & carousels', 'Content calendars'],
+      research: { title: 'Daily platform & algorithm briefing', desk: 'PLATFORM & ALGORITHM BRIEFING' },
       presets: [
+        ['Post for every platform', 'Write one ready-to-post version for each platform (Instagram, Facebook, TikTok, YouTube Shorts, LinkedIn, X, Threads, Pinterest), each tuned to that platform\'s current algorithm: format, length, hook, caption, hashtags or keywords, alt text and best time to post, for: '],
+        ['Algorithm deep dive', 'Deep-dive the current ranking algorithm of each major social platform: the signals it rewards now, what changed recently, what suppresses reach, best formats and lengths, and exactly how to post to win, for an account about: '],
         ['7-day calendar', 'Plan a 7-day social media calendar (channel, format, hook, caption, hashtags, best time to post) for: '],
         ['Launch posts', 'Write ready-to-post launch content for Instagram, LinkedIn, TikTok and X (each in the platform\'s style, with visual direction) for: '],
         ['Reel scripts', 'Write 3 short-form video scripts (hook in first 2 seconds, shot list, on-screen text, caption) for: '],
       ],
-      system: 'You are Agent 3 of My Workforce: a social media manager who plans and creates content for Instagram, Facebook, LinkedIn, TikTok, X, YouTube Shorts and Pinterest. You write in each platform\'s native style, open with a strong hook, give visual direction for designers or video editors, suggest relevant hashtags, and plan posting cadence and community management. Content must be ready to copy and post.',
+      system: 'You are Agent 3 of My Workforce: a social media manager who creates posts for every social platform: Instagram (feed, Reels, Stories), Facebook, TikTok, YouTube (Shorts and long-form), LinkedIn, X, Threads, Pinterest, Snapchat, Reddit, Bluesky, and WhatsApp and Telegram channels. You study each platform\'s ranking algorithm and keep up with it daily: which signals it rewards now (watch time and completion, shares and sends, saves, meaningful comments, dwell time, early engagement, originality, search inside the platform), what suppresses reach, and the formats, lengths and posting cadence that win. You adapt every post to its platform: native format and aspect ratio, hook, length, caption, hashtags or keywords, call to action, alt text and best posting window. Content must be ready to copy and post. When you describe how an algorithm behaves, say whether it comes from an official platform statement or from observed creator data, and how sure you are.',
     },
     {
       id: 'ads', no: 4, name: 'ADS MANAGER', short: 'Ads', mins: 180,
@@ -996,7 +1047,11 @@ textarea.field { min-height: 108px; }
   }
 
   /* ================= Engines ================= */
-  const settings = Object.assign({ engine: null, apiKey: '', model: 'claude-opus-5-5' }, store.get('mw-settings', {}));
+  const settings = Object.assign({ engine: null, apiKey: '', model: 'claude-opus-5-5', web: true }, store.get('mw-settings', {}));
+  const PLATFORMS = ['Instagram', 'TikTok', 'YouTube', 'Facebook', 'LinkedIn', 'X', 'Threads', 'Pinterest', 'Snapchat', 'Reddit'];
+  settings.research = Object.assign({ niche: '', seeds: '', region: '', platforms: PLATFORMS.slice(0, 8), auto: true }, settings.research || {});
+  // Live web search runs through the API key engine on models that support it.
+  const liveWeb = () => engine() === 'api' && settings.web !== false && settings.model !== 'claude-haiku-5-5';
   let sampleFn = null, downloadsNs = null, engineReady = false;
   const artifactPossible = typeof window.claude === 'object' && window.claude && typeof window.claude.use === 'function';
   function engine() {
@@ -1052,14 +1107,10 @@ textarea.field { min-height: 108px; }
     throw new AgentError(SAMPLE_MSG.invalid_json, 'invalid_json');
   }
 
-  async function callApi({ system, prompt, effort, signal }) {
-    const body = {
-      model: settings.model,
-      max_tokens: 16000,
-      system,
-      messages: [{ role: 'user', content: prompt }],
-      output_config: { effort },
-    };
+  async function callApi({ system, prompt, effort, signal, web }) {
+    const base = { model: settings.model, max_tokens: 16000, system, output_config: { effort } };
+    if (web) base.tools = [{ type: 'web_search_20260209', name: 'web_search', max_uses: 8 }];
+    const body = { ...base, messages: [{ role: 'user', content: prompt }] };
     const headers = {
       'content-type': 'application/json',
       'x-api-key': settings.apiKey,
@@ -1071,30 +1122,51 @@ textarea.field { min-height: 108px; }
       body.fallbacks = 'default';
       headers['anthropic-beta'] = 'server-side-fallback-2026-07-01';
     }
-    let res;
-    try {
-      res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body: JSON.stringify(body), signal });
-    } catch (e) {
-      if (e.name === 'AbortError') throw abortErr();
-      throw new AgentError('Could not reach the Claude API. Check your connection.', 'network');
+    const all = [];
+    let data = null, searches = 0;
+    // A long web-search turn can pause; resend it as-is and the server resumes.
+    for (let round = 0; round < 4; round++) {
+      let res;
+      try {
+        res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body: JSON.stringify(body), signal });
+      } catch (e) {
+        if (e.name === 'AbortError') throw abortErr();
+        throw new AgentError('Could not reach the Claude API. Check your connection.', 'network');
+      }
+      data = null;
+      try { data = await res.json(); } catch { /* non-JSON body */ }
+      if (!res.ok) {
+        const m = data?.error?.message || res.statusText;
+        if (res.status === 401) throw new AgentError('The API key was rejected. Check it in Settings.', 'auth');
+        if (res.status === 429) throw new AgentError('Rate limited by the Claude API. Wait a minute, then try again.', 'rate_limited');
+        if (res.status === 529 || res.status >= 500) throw new AgentError('The Claude API is busy. Try again shortly.', 'overloaded');
+        throw new AgentError(`Claude API error: ${m}`, 'api');
+      }
+      if (data.stop_reason === 'refusal') throw new AgentError(SAMPLE_MSG.refused, 'refused');
+      all.push(...(data.content || []));
+      searches += data.usage?.server_tool_use?.web_search_requests || 0;
+      if (data.stop_reason !== 'pause_turn') break;
+      body.messages = [body.messages[0], { role: 'assistant', content: all.slice() }];
     }
-    let data = null;
-    try { data = await res.json(); } catch { /* non-JSON body */ }
-    if (!res.ok) {
-      const m = data?.error?.message || res.statusText;
-      if (res.status === 401) throw new AgentError('The API key was rejected. Check it in Settings.', 'auth');
-      if (res.status === 429) throw new AgentError('Rate limited by the Claude API. Wait a minute, then try again.', 'rate_limited');
-      if (res.status === 529 || res.status >= 500) throw new AgentError('The Claude API is busy. Try again shortly.', 'overloaded');
-      throw new AgentError(`Claude API error: ${m}`, 'api');
-    }
-    if (data.stop_reason === 'refusal') throw new AgentError(SAMPLE_MSG.refused, 'refused');
-    let text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    let text = all.filter(b => b.type === 'text').map(b => b.text).join('');
     if (data.stop_reason === 'max_tokens') text += '\n\n> Output reached the length limit. Ask for one part at a time to get the rest.';
+    if (web) text += sourcesTable(all, searches);
     return text;
+  }
+  // Sources the answer cited (or, failing that, the pages the searches returned), as a table.
+  function sourcesTable(blocks, searches) {
+    const seen = new Map();
+    const add = (url, title) => { if (url && /^https?:\/\//.test(url) && !seen.has(url)) seen.set(url, (title || url).replace(/\|/g, '/').replace(/\s+/g, ' ').trim()); };
+    for (const b of blocks) if (b.type === 'text') for (const c of b.citations || []) add(c.url, c.title);
+    const cited = seen.size;
+    if (!cited) for (const b of blocks) if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) for (const r of b.content) add(r.url, r.title);
+    if (!seen.size) return searches ? `\n\n> Live web research: ${searches} search${searches === 1 ? '' : 'es'}, no sources returned.` : '';
+    const rows = [...seen].slice(0, 15).map(([u, t], i) => `| ${i + 1} | ${trunc(t, 90)} | ${u} |`).join('\n');
+    return `\n\n## Sources\n${cited ? 'Cited in this briefing' : 'Pages found by the web searches'}${searches ? ` (${searches} search${searches === 1 ? '' : 'es'})` : ''}.\n\n| # | Source | Link |\n| --- | --- | --- |\n${rows}`;
   }
 
   // One way to ask an agent, whatever powers it. Returns text, or parsed JSON when json is set.
-  async function ask({ system, prompt, tier = 'default', effort = 'medium', json = false, onText, signal, demo }) {
+  async function ask({ system, prompt, tier = 'default', effort = 'medium', json = false, onText, signal, demo, web = false }) {
     const eng = engine();
     if (eng === 'artifact') {
       const input = `${system}\n\n---\n\n${prompt}`;
@@ -1108,7 +1180,7 @@ textarea.field { min-height: 108px; }
       }
     }
     if (eng === 'api') {
-      const text = await callApi({ system, prompt, effort, signal });
+      const text = await callApi({ system, prompt, effort, signal, web: web && liveWeb() });
       if (json) return parseJsonLoose(text);
       onText?.(text);
       return text;
@@ -1378,6 +1450,97 @@ export async function POST(req: Request) {
 3. Deploy a preview and test on mobile.`;
     },
   };
+  const longDate = (t = Date.now()) => new Date(t).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const NO_WEB = '\n\nYou cannot browse the web in this mode. Base this on what you know, mark anything that may have changed recently as "verify", and never invent dates, statistics or sources.';
+  function researchPrompt(id) {
+    const c = settings.research;
+    const market = c.region.trim() || 'global';
+    if (id === 'seo') return `Today is ${longDate()}. Run today's daily SEO, AEO and GEO research for: ${c.niche.trim()}.
+Seed keywords: ${c.seeds.trim() || 'choose the best seeds for this niche'}. Market: ${market}.
+Deep-dive and report:
+1. Keyword opportunities: a table of 15 to 25 keywords (keyword, intent, trend: rising, steady or falling, difficulty estimate, priority, target page or content idea).
+2. Rising and new questions people ask (People Also Ask, forums, AI assistants): a table of question, intent and best answer format.
+3. Search and AI search changes: recent Google core or spam updates, SERP feature and AI Overview changes, and how ChatGPT, Gemini, Perplexity and Claude are choosing sources in this niche, with dates.
+4. Competitor moves and content gaps worth acting on.
+5. Today's tasks: a prioritized table of 5 actions (task, why, effort, expected impact).
+Give a source link for every claim about an update or trend, and say clearly when something could not be verified.`;
+    return `Today is ${longDate()}. Run today's daily social media research for: ${c.niche.trim()}.
+Platforms: ${(c.platforms.length ? c.platforms : PLATFORMS.slice(0, 8)).join(', ')}. Market: ${market}.
+Deep-dive and report:
+1. Algorithm briefing: a table with one row per platform: what the ranking algorithm rewards right now, what changed recently (with dates), what suppresses reach, best formats and lengths, posting frequency.
+2. Trends: trending formats, sounds, topics and hashtags or keywords relevant to this niche, per platform.
+3. Creator and competitor patterns that are working this week.
+4. Today's posts: a table with one ready-to-post idea per platform (platform, format, hook, caption, hashtags or keywords, best time to post).
+Give a source link for each algorithm or trend claim, official platform statements first, and say clearly when something could not be verified.`;
+  }
+  const DEMO_RESEARCH = {
+    seo(c) {
+      const t = topicOf(c.niche) || 'your niche';
+      return `## Daily keyword & search briefing: ${cap(t)}
+*${longDate()} · market: ${c.region || 'global'}*
+
+### Keyword opportunities
+| Keyword | Intent | Trend | Difficulty | Priority | Target page |
+| --- | --- | --- | --- | --- | --- |
+| ${t} | Commercial | Steady | Medium | High | Main category page |
+| best ${t} | Commercial | Rising | Medium | High | Comparison guide |
+| ${t} near me | Local | Steady | Low | Medium | Location page |
+| ${t} price | Transactional | Rising | Low | High | Pricing page |
+| is ${t} worth it | Informational | Rising | Low | Medium | FAQ article |
+| ${t} vs alternatives | Comparison | Steady | Medium | Medium | Versus page |
+
+Trend and difficulty here are placeholders; live research fills them from real sources.
+
+### Questions people ask
+| Question | Intent | Best answer format |
+| --- | --- | --- |
+| What is the best ${t}? | Commercial | Ranked list with criteria |
+| How much does ${t} cost? | Transactional | Short answer + price table |
+| Is ${t} good for beginners? | Informational | 40-word direct answer, then detail |
+
+### Search and AI search changes
+- Check Google Search Central's ranking updates page for any core or spam update this week.
+- Check whether AI Overviews appear for your top 5 keywords and which sites they cite.
+- Ask ChatGPT, Gemini and Perplexity your top question and note which sources they quote.
+
+### Today's tasks
+| Task | Why | Effort | Impact |
+| --- | --- | --- | --- |
+| Add a 40-word answer under each H2 question | Wins snippets and AI citations | Low | High |
+| Refresh the comparison guide | Rising "best" queries | Medium | High |
+| Add FAQPage schema | Answer engines read it | Low | Medium |`;
+    },
+    smm(c) {
+      const t = topicOf(c.niche) || 'your brand';
+      const ALGO = {
+        Instagram: ['Watch time, shares (sends) and saves on Reels; original content', 'Reposted or watermarked clips', 'Reels 7 to 30 s, carousels 5 to 10 slides', '4 to 7 posts a week'],
+        TikTok: ['Completion rate, rewatches, shares, search relevance', 'Low early retention', '15 to 45 s with a hook in 1 s', '1 to 3 a day'],
+        YouTube: ['Shorts: viewed vs swiped away; long-form: click-through and retention', 'Misleading thumbnails, weak first 30 s', 'Shorts under 60 s; long-form 8 to 15 min', '3 Shorts and 1 video a week'],
+        Facebook: ['Reels, meaningful comments and shares', 'Engagement bait, link-only posts', 'Reels under 60 s, native video', '3 to 5 a week'],
+        LinkedIn: ['Dwell time, meaningful comments, early engagement', 'Outbound links in the post body', 'Document carousels, 150 to 300 word text posts', '3 to 5 a week'],
+        X: ['Replies, reposts and time spent; replies from the author', 'External links, hashtag stuffing', 'Short threads, native video', '1 to 3 a day'],
+        Threads: ['Conversation and replies; topic tags', 'Cross-posted content with no reply', 'Short text with a question', 'Daily'],
+        Pinterest: ['Fresh pins, keyword-rich titles and saves', 'Repeated pins, no keywords', 'Vertical 2:3 pins, idea pins', '5 to 10 pins a week'],
+        Snapchat: ['Spotlight completion and shares', 'Recycled watermarked video', 'Vertical 10 to 60 s', 'Daily'],
+        Reddit: ['Upvotes and comments in the first hour; community fit', 'Self-promotion against subreddit rules', 'Helpful text posts', '2 to 3 a week'],
+      };
+      const plats = (c.platforms.length ? c.platforms : PLATFORMS.slice(0, 8)).filter(p => ALGO[p]);
+      return `## Daily platform & algorithm briefing: ${cap(t)}
+*${longDate()} · market: ${c.region || 'global'}*
+
+### Algorithm briefing
+| Platform | Rewards now | Suppresses reach | Best formats | Posting frequency |
+| --- | --- | --- | --- | --- |
+${plats.map(p => `| ${p} | ${ALGO[p][0]} | ${ALGO[p][1]} | ${ALGO[p][2]} | ${ALGO[p][3]} |`).join('\n')}
+
+These are long-standing patterns, not today's changes; live research adds what changed this week, with sources.
+
+### Today's posts
+| Platform | Format | Hook | Caption | Best time |
+| --- | --- | --- | --- | --- |
+${plats.map((p, i) => `| ${p} | ${['Reel', 'Video', 'Short', 'Reel', 'Carousel', 'Thread', 'Text post', 'Pin', 'Spotlight', 'Text post'][i % 10]} | "${['Nobody tells you this about', 'Wait for the end:', '3 seconds to see why', 'We tested', 'What we learned building', 'Hot take on', 'Quick question about', 'Save this guide to', 'Behind the scenes of', 'Honest question about'][i % 10]} ${t}" | One clear benefit, one question, one call to action | Check your audience insights |`).join('\n')}`;
+    },
+  };
   const DEMO_TITLES = { seo: 'Keyword and answer-engine plan', model3d: '3D asset spec and blockout', smm: '7-day social content plan', ads: 'Meta and Google Ads campaign', leads: 'Lead sourcing and outreach', dev: 'Technical build plan' };
   const ROUTE_WORDS = {
     seo: /\b(seo|aeo|geo|keyword|rank|ranking|search|blog|article|content|organic|serp|visibility)\b/i,
@@ -1462,13 +1625,21 @@ ${parts}`;
     it.status = 'running'; it.started = Date.now(); it.output = ''; it.error = '';
     mark('all');
     logEvent('info', `${agent.name} started`, it.title);
+    // Researching agents get their latest daily briefing as context for every other task.
+    let context = '';
+    const brief = agent.research && !it.research ? latestBriefing(it.agent) : null;
+    if (brief) context = `\n\nYour latest daily research briefing (${longDate(brief.it.ended)}). Use what is relevant and still current:\n"""\n${trunc(brief.it.output, 5000)}\n"""`;
+    const noWeb = agent.research && engine() === 'artifact' ? NO_WEB : '';
+    it.source = engine() === 'demo' ? 'demo' : agent.research && liveWeb() ? 'web' : 'model';
     const prompt = run.kind === 'mission'
-      ? `Client brief:\n"""${run.brief}"""\n\nYour assignment from the Main Agent: ${it.title}\n${it.instructions}\n\n${FORMAT}`
-      : `${it.instructions}\n\n${FORMAT}`;
-    const demo = (sig, onText) => typeOut(DEMO_NOTE + DEMO[it.agent](run.kind === 'mission' ? topicOf(run.brief) : subjectOf(it.instructions), run.brief), onText, sig);
+      ? `Client brief:\n"""${run.brief}"""\n\nYour assignment from the Main Agent: ${it.title}\n${it.instructions}${context}\n\n${FORMAT}${noWeb}`
+      : `${it.instructions}${context}\n\n${FORMAT}${noWeb}`;
+    const demo = (sig, onText) => typeOut(DEMO_NOTE + (it.research
+      ? DEMO_RESEARCH[it.agent](settings.research)
+      : DEMO[it.agent](run.kind === 'mission' ? topicOf(run.brief) : subjectOf(it.instructions), run.brief)), onText, sig);
     try {
       const text = await ask({
-        system: agent.system, prompt, signal, demo,
+        system: agent.system, prompt, signal, demo, web: !!agent.research, effort: it.research ? 'high' : 'medium',
         onText: tx => { it.output = tx; mark('out', 'ws'); },
       });
       it.output = trunc(text, MAX_OUT);
@@ -1532,14 +1703,14 @@ ${parts}`;
 
   /* ================= Agent workspaces ================= */
   const agentCtl = {};
-  async function runAgent(agentId, text) {
-    const agent = BY_ID[agentId];
-    const it = { id: uid(), agent: agentId, title: trunc(text.replace(/\s+/g, ' '), 70), instructions: text, status: 'queued', output: '' };
-    const run = { id: uid(), kind: 'task', brief: text, created: Date.now(), status: 'running', plan: '', summary: '', items: [it] };
+  async function runAgent(agentId, text, opts = {}) {
+    const research = opts.kind === 'research';
+    const it = { id: uid(), agent: agentId, title: opts.title || trunc(text.replace(/\s+/g, ' '), 70), instructions: text, status: 'queued', output: '', research };
+    const run = { id: uid(), kind: research ? 'research' : 'task', brief: research ? `${opts.title}: ${settings.research.niche.trim()}` : text, created: Date.now(), status: 'running', plan: '', summary: '', items: [it] };
     S.runs.unshift(run);
     agentCtl[agentId] = new AbortController();
-    wsView = it.id;
-    selRun = run.id; selTab = it.id;
+    if (opts.select !== false || wsAgent === agentId) wsView = it.id;
+    if (opts.select !== false) { selRun = run.id; selTab = it.id; }
     mark('all'); save();
     await runItem(run, it, agentCtl[agentId].signal);
     run.status = it.status === 'done' ? 'done' : it.status;
@@ -1547,6 +1718,31 @@ ${parts}`;
     mark('all'); save();
   }
   const agentBusy = id => !!agentCtl[id] || !!(mission && mission.items.some(it => it.agent === id && it.status === 'running'));
+
+  /* ================= Daily research ================= */
+  const RESEARCHERS = AGENTS.filter(a => a.research);
+  const dayKey = (t = Date.now()) => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+  function briefings(id) {
+    return S.runs.filter(r => r.kind === 'research' && r.items[0]?.agent === id).map(r => ({ run: r, it: r.items[0] }));
+  }
+  function latestBriefing(id, maxDays = 7) {
+    return briefings(id).find(x => x.it.status === 'done' && x.it.output && Date.now() - x.it.ended < maxDays * 864e5) || null;
+  }
+  const dailyTried = store.get('mw-daily', {});
+  function startResearch(id, auto) {
+    const a = BY_ID[id];
+    if (!a?.research || agentBusy(id)) return false;
+    if (!settings.research.niche.trim()) { toast('Add your business or niche in the research desk first'); $('#resNiche').focus(); return false; }
+    dailyTried[id] = dayKey(); store.set('mw-daily', dailyTried);
+    logEvent('info', auto ? 'Daily research started' : 'Research started', `${a.name}: ${a.research.title.toLowerCase()}`);
+    runAgent(id, researchPrompt(id), { kind: 'research', title: a.research.title, select: !auto });
+    return true;
+  }
+  // Runs each researcher once a day, the first time the dashboard is open that day.
+  function checkDaily() {
+    if (!engineReady || !settings.research.auto || !settings.research.niche.trim()) return;
+    for (const a of RESEARCHERS) if (dailyTried[a.id] !== dayKey() && !agentBusy(a.id)) startResearch(a.id, true);
+  }
   function agentState(id) {
     let latest = null;
     for (const r of S.runs) for (const it of r.items || []) if (it.agent === id) { if (!latest || (it.started || 0) > (latest.started || 0)) latest = it; }
@@ -1555,6 +1751,7 @@ ${parts}`;
     if (latest && latest.ended && Date.now() - latest.ended < 6000) return latest.status === 'done' ? 'done' : 'error';
     return 'idle';
   }
+  const SOURCE_TEXT = { web: 'Live web research', model: "Claude's own knowledge (no live web)", demo: 'Demo template' };
   const STATE_TEXT = { idle: 'Idle', queued: 'Queued', running: 'Working…', done: 'Delivered', error: 'Needs attention', stopped: 'Stopped', planning: 'Planning…', synth: 'Summarizing…' };
 
   /* ================= Markdown ================= */
@@ -1840,6 +2037,7 @@ ${parts}`;
         </div>
       </div>
       <p class="agent-role">${esc(a.role)}</p>
+      ${a.research ? '<p class="agent-daily" data-daily><i></i><span>Daily research · not run yet</span></p>' : ''}
       <div class="skills">${a.skills.map(s => `<span>${esc(s)}</span>`).join('')}</div>
       <div class="agent-foot">
         <span class="st" data-st data-s="idle"><i></i><span>Idle</span></span>
@@ -1989,7 +2187,7 @@ ${parts}`;
     return html || '<p class="card-sub">No output.</p>';
   }
   function runLabel(r) {
-    const head = r.kind === 'mission' ? 'Mission' : BY_ID[r.items[0]?.agent]?.short || 'Task';
+    const head = r.kind === 'mission' ? 'Mission' : r.kind === 'research' ? `Daily research · ${BY_ID[r.items[0]?.agent]?.short}` : BY_ID[r.items[0]?.agent]?.short || 'Task';
     return `${hhmm(r.created)} · ${head} · ${trunc(r.brief.replace(/\s+/g, ' '), 54)}`;
   }
   function currentText() {
@@ -2166,7 +2364,9 @@ ${parts}`;
   function agentSheet(run, it) {
     const a = BY_ID[it.agent];
     const rows = [[{ v: `${a.name} · Agent ${pad(a.no)}`, s: ST.title }], lbl('Task', it.title)];
-    if (run.kind !== 'mission') rows.push(lbl('Brief', run.brief));
+    if (run.kind === 'task') rows.push(lbl('Brief', run.brief));
+    if (run.kind === 'research') rows.push(lbl('Niche', settings.research.niche || run.brief));
+    if (it.source) rows.push(lbl('Source', SOURCE_TEXT[it.source]));
     rows.push(lbl('Status', STATE_TEXT[it.status] || it.status), lbl('Delivered', it.ended ? stamp(it.ended) : '—'), []);
     rows.push(...mdRows(it.output));
     if (it.error) rows.push([], lbl('Error', it.error));
@@ -2190,7 +2390,7 @@ ${parts}`;
   function xlsxName(run, it) {
     const d = new Date(run.created);
     const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    const who = it ? BY_ID[it.agent].short.toLowerCase() : run.kind === 'mission' ? 'mission' : BY_ID[run.items[0].agent].short.toLowerCase();
+    const who = run.kind === 'mission' && !it ? 'mission' : BY_ID[(it || run.items[0]).agent].short.toLowerCase() + (run.kind === 'research' ? '-daily-research' : '');
     return `my-workforce-${who}-${(run.kind === 'mission' ? topicOf(run.brief) : subjectOf(run.brief)).replace(/\s+/g, '-')}-${day}.xlsx`;
   }
 
@@ -2308,6 +2508,7 @@ ${parts}`;
     clearArmed = false;
     $('#clearBtn').textContent = 'Clear history';
     $('#apiModel').value = settings.model;
+    $('#apiWeb').checked = settings.web !== false;
     $('#setErr').textContent = '';
     syncApiFields();
     setBackdrop.hidden = false;
@@ -2324,9 +2525,11 @@ ${parts}`;
     settings.engine = v;
     settings.apiKey = v === 'api' ? key : settings.apiKey;
     settings.model = $('#apiModel').value;
+    settings.web = $('#apiWeb').checked;
     store.set('mw-settings', settings);
     closeSettings();
     renderEngine();
+    mark('research');
     toast(engine() === 'demo' ? 'Demo mode on' : 'Claude connected');
   });
   $('#setCancel').addEventListener('click', closeSettings);
@@ -2375,6 +2578,106 @@ ${parts}`;
     }
     return changed;
   }
+  /* ================= Research desk ================= */
+  const resCfg = settings.research;
+  $('#resNiche').value = resCfg.niche; $('#resSeeds').value = resCfg.seeds; $('#resRegion').value = resCfg.region;
+  $('#platChips').innerHTML = PLATFORMS.map(p => `<button type="button" class="chip" data-plat="${esc(p)}" aria-pressed="${resCfg.platforms.includes(p)}">${esc(p)}</button>`).join('');
+  $('#desks').innerHTML = RESEARCHERS.map(a => `
+    <article class="desk" id="desk-${a.id}" data-s="idle">
+      <div class="agent-top">
+        <span class="a-ico" aria-hidden="true">${svgIcon(a.id)}</span>
+        <div>
+          <span class="eyebrow">Agent ${pad(a.no)} · ${esc(a.short)} · every day</span>
+          <div class="agent-name">${esc(a.research.desk)}</div>
+        </div>
+      </div>
+      <p class="desk-meta" data-meta>No briefing yet</p>
+      <div class="days" data-days aria-label="Briefings in the last 7 days"></div>
+      <div class="cmd-actions">
+        <button type="button" class="btn primary" data-research="${a.id}">Research now</button>
+        <button type="button" class="btn" data-brief-open="${a.id}">Open briefing</button>
+        <button type="button" class="btn" data-brief-xls="${a.id}">Excel</button>
+      </div>
+    </article>`).join('');
+  const saveRes = () => { store.set('mw-settings', settings); mark('research'); };
+  let resTimer = 0;
+  $('#resForm').addEventListener('input', () => {
+    resCfg.niche = $('#resNiche').value; resCfg.seeds = $('#resSeeds').value; resCfg.region = $('#resRegion').value;
+    clearTimeout(resTimer); resTimer = setTimeout(saveRes, 300);
+  });
+  // Start the day's research only once the viewer has finished with the form.
+  let dailyTimer = 0;
+  const settleDaily = () => {
+    clearTimeout(dailyTimer);
+    dailyTimer = setTimeout(() => ($('.research-card').contains(document.activeElement) ? settleDaily() : checkDaily()), 3000);
+  };
+  $('#resForm').addEventListener('change', () => { saveRes(); settleDaily(); });
+  $('#resForm').addEventListener('submit', e => e.preventDefault());
+  $('#platChips').addEventListener('click', e => {
+    const b = e.target.closest('[data-plat]');
+    if (!b) return;
+    const p = b.dataset.plat, on = resCfg.platforms.includes(p);
+    resCfg.platforms = on ? resCfg.platforms.filter(x => x !== p) : PLATFORMS.filter(x => x === p || resCfg.platforms.includes(x));
+    b.setAttribute('aria-pressed', String(!on));
+    saveRes();
+    settleDaily();
+  });
+  $('#autoBtn').addEventListener('click', () => { resCfg.auto = !resCfg.auto; saveRes(); if (resCfg.auto) checkDaily(); });
+  $('#desks').addEventListener('click', e => {
+    const go = e.target.closest('[data-research]'), open = e.target.closest('[data-brief-open]'), xls = e.target.closest('[data-brief-xls]');
+    if (go) { startResearch(go.dataset.research, false); return; }
+    const id = (open || xls)?.dataset.briefOpen || (open || xls)?.dataset.briefXls;
+    const b = id && (briefings(id).find(x => x.it.status === 'done') || briefings(id).find(x => x.it.output));
+    if (!b) return;
+    if (xls) { downloadFile(xlsxName(b.run, b.it), runWorkbook(b.run, b.it), XLSX_MIME); return; }
+    selRun = b.run.id; selTab = b.it.id; mark('out');
+    $('#outTitle').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  });
+  const rel = t => {
+    const d0 = new Date(); d0.setHours(0, 0, 0, 0);
+    const diff = Math.round((d0 - new Date(new Date(t).setHours(0, 0, 0, 0))) / 864e5);
+    return diff === 0 ? `today ${hhmm(t)}` : diff === 1 ? `yesterday ${hhmm(t)}` : new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  };
+  function renderResearch() {
+    $('#autoBtn').setAttribute('aria-pressed', String(resCfg.auto));
+    $('#autoBtn').textContent = `Auto daily · ${resCfg.auto ? 'On' : 'Off'}`;
+    for (const a of RESEARCHERS) {
+      const el = $('#desk-' + a.id), list = briefings(a.id);
+      const busy = list[0] && ['queued', 'running'].includes(list[0].it.status) && agentBusy(a.id);
+      const last = list.find(x => x.it.status === 'done');
+      el.dataset.s = busy ? 'running' : 'idle';
+      $('[data-meta]', el).innerHTML = busy
+        ? `<strong>Researching now…</strong> ${liveWeb() ? 'Searching the web.' : engine() === 'demo' ? 'Demo template.' : "Using Claude's own knowledge."}`
+        : last ? `Last briefing <strong>${rel(last.it.ended)}</strong> · ${SOURCE_TEXT[last.it.source] || 'Claude'}` : list[0]?.it.status === 'error' ? `<strong>Last attempt failed:</strong> ${esc(list[0].it.error)}` : 'No briefing yet';
+      const days = [];
+      for (let k = 6; k >= 0; k--) {
+        const d = new Date(); d.setDate(d.getDate() - k);
+        const key = dayKey(d), on = list.some(x => x.it.status === 'done' && dayKey(x.it.ended) === key);
+        days.push(`<span class="day${on ? ' on' : ''}${k === 0 ? ' today' : ''}" title="${d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' })}: ${on ? 'briefing done' : 'no briefing'}">${d.toLocaleDateString(undefined, { weekday: 'narrow' })}</span>`);
+      }
+      $('[data-days]', el).innerHTML = days.join('');
+      $('[data-research]', el).disabled = agentBusy(a.id);
+      $('[data-brief-open]', el).disabled = $('[data-brief-xls]', el).disabled = !list.some(x => x.it.output);
+      const card = $('#ag-' + a.id + ' [data-daily]');
+      if (card) {
+        card.classList.toggle('on', !!last && dayKey(last.it.ended) === dayKey());
+        $('span', card).textContent = busy ? 'Daily research · researching now' : last ? `Daily research · ${rel(last.it.ended)}` : 'Daily research · not run yet';
+      }
+    }
+    const eng = engine();
+    let lvl = 'info', note;
+    if (!resCfg.niche.trim()) { lvl = 'warning'; note = 'Add your business or niche above to start daily research.'; }
+    else if (eng === 'api' && liveWeb()) { lvl = 'good'; note = 'Live web research is on: briefings search the web and list their sources.'; }
+    else if (eng === 'api') note = settings.model === 'claude-haiku-5-5' ? 'Haiku 5.5 researches without web search here. Choose Opus 5.5 or Sonnet 5.5 in Settings for live web research.' : 'Live web research is off in Settings, so briefings use Claude\'s own knowledge.';
+    else if (eng === 'artifact') note = 'Inside Claude, agents cannot browse the web, so briefings use Claude\'s own knowledge and flag what to verify. For live web research with sources, add an API key in Settings.';
+    else note = 'Demo mode: briefings are templates. Connect Claude in Settings for real research.';
+    note += resCfg.auto ? ' Auto daily runs both briefings once a day, the first time My Workforce is open that day.' : ' Auto daily is off; use Research now.';
+    $('#resNote').dataset.level = lvl;
+    $('#resNote').innerHTML = `<span class="ico">${ICONS[lvl]}</span><span>${esc(note)}</span>`;
+  }
+  setInterval(checkDaily, 5 * 60000);
+  setTimeout(function waitEngine() { engineReady ? checkDaily() : setTimeout(waitEngine, 500); }, 2500);
+
   const ro = new ResizeObserver(() => buildNet());
   ro.observe(netEl);
   refreshStates();
@@ -2407,6 +2710,7 @@ ${parts}`;
       if (all || dirty.has('out')) renderOut();
       if (all || dirty.has('ws')) renderWs();
       if (all) renderLoads();
+      if (all || dirty.has('research') || dirty.has('agents')) renderResearch();
       dirty.clear();
     }
     requestAnimationFrame(frame);
