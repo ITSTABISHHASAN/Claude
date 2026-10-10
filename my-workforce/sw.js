@@ -1,5 +1,5 @@
 // Offline shell for My Workforce: cache the app files, always try the network first.
-const CACHE = 'my-workforce-v1';
+const CACHE = 'my-workforce-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {
@@ -21,8 +21,11 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(e.request)
       .then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy));
+        // Keep only good responses, so a 404 or 500 never replaces the cached app.
+        if (res.ok && res.type === 'basic') {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy));
+        }
         return res;
       })
       .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))

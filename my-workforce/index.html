@@ -921,7 +921,11 @@ textarea.field { min-height: 108px; }
   };
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
-    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage unavailable: keep in memory only */ } },
+    // true when saved, 'full' when the browser's storage quota is used up, false when storage is unavailable.
+    set(k, v) {
+      try { localStorage.setItem(k, JSON.stringify(v)); return true; }
+      catch (e) { return e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) ? 'full' : false; }
+    },
     del(k) { try { localStorage.removeItem(k); } catch { /* ignore */ } },
   };
 
@@ -1034,7 +1038,16 @@ textarea.field { min-height: 108px; }
     saveTimer = setTimeout(() => {
       S.runs = S.runs.slice(0, MAX_RUNS);
       S.events = S.events.slice(0, 40);
-      store.set('mw-state', S);
+      let res = store.set('mw-state', S), dropped = 0;
+      // Out of room: drop the oldest finished runs until the rest fits.
+      while (res === 'full' && S.runs.length > 1) {
+        const k = S.runs.map(r => ['planning', 'running', 'synth'].includes(r.status)).lastIndexOf(false);
+        if (k < 0) break;
+        S.runs.splice(k, 1); dropped++;
+        res = store.set('mw-state', S);
+      }
+      if (dropped) { toast(`Browser storage is full, so the ${dropped} oldest run${dropped === 1 ? ' was' : 's were'} removed. Download anything you want to keep.`); mark('all'); }
+      else if (res === 'full') toast('Browser storage is full, so the latest work was not saved. Download it, then clear history in Settings.');
     }, 400);
   }
   const dirty = new Set(['all']);
@@ -1125,7 +1138,7 @@ textarea.field { min-height: 108px; }
     const all = [];
     let data = null, searches = 0;
     // A long web-search turn can pause; resend it as-is and the server resumes.
-    for (let round = 0; round < 4; round++) {
+    for (let round = 0; round < 6; round++) {
       let res;
       try {
         res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body: JSON.stringify(body), signal });
@@ -1135,6 +1148,7 @@ textarea.field { min-height: 108px; }
       }
       data = null;
       try { data = await res.json(); } catch { /* non-JSON body */ }
+      if (signal?.aborted) throw abortErr();
       if (!res.ok) {
         const m = data?.error?.message || res.statusText;
         if (res.status === 401) throw new AgentError('The API key was rejected. Check it in Settings.', 'auth');
@@ -1142,14 +1156,17 @@ textarea.field { min-height: 108px; }
         if (res.status === 529 || res.status >= 500) throw new AgentError('The Claude API is busy. Try again shortly.', 'overloaded');
         throw new AgentError(`Claude API error: ${m}`, 'api');
       }
+      if (!data || !Array.isArray(data.content)) throw new AgentError('The Claude API sent a response this page could not read. Try again.', 'api');
       if (data.stop_reason === 'refusal') throw new AgentError(SAMPLE_MSG.refused, 'refused');
-      all.push(...(data.content || []));
+      all.push(...data.content);
       searches += data.usage?.server_tool_use?.web_search_requests || 0;
       if (data.stop_reason !== 'pause_turn') break;
       body.messages = [body.messages[0], { role: 'assistant', content: all.slice() }];
     }
     let text = all.filter(b => b.type === 'text').map(b => b.text).join('');
+    if (!text.trim()) throw new AgentError(data.stop_reason === 'pause_turn' ? 'The web research ran out of steps before writing anything. Run it again.' : 'No answer came back. Try again.', 'empty');
     if (data.stop_reason === 'max_tokens') text += '\n\n> Output reached the length limit. Ask for one part at a time to get the rest.';
+    if (data.stop_reason === 'pause_turn') text += '\n\n> The web research ran out of steps before it finished, so this may be incomplete. Run it again for a fuller result.';
     if (web) text += sourcesTable(all, searches);
     return text;
   }
@@ -1451,7 +1468,7 @@ export async function POST(req: Request) {
     },
   };
   const longDate = (t = Date.now()) => new Date(t).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const NO_WEB = '\n\nYou cannot browse the web in this mode. Base this on what you know, mark anything that may have changed recently as "verify", and never invent dates, statistics or sources.';
+  const NO_WEB = '\n\nYou have no web access for this task. Base it on what you know, mark anything that may have changed recently as "verify", and never invent dates, statistics, URLs or sources.';
   function researchPrompt(id) {
     const c = settings.research;
     const market = c.region.trim() || 'global';
@@ -1463,7 +1480,7 @@ Deep-dive and report:
 3. Search and AI search changes: recent Google core or spam updates, SERP feature and AI Overview changes, and how ChatGPT, Gemini, Perplexity and Claude are choosing sources in this niche, with dates.
 4. Competitor moves and content gaps worth acting on.
 5. Today's tasks: a prioritized table of 5 actions (task, why, effort, expected impact).
-Give a source link for every claim about an update or trend, and say clearly when something could not be verified.`;
+${liveWeb() ? 'Give a source link for every claim about an update or trend, and say clearly when something could not be verified.' : 'Mark anything that may have changed recently as "verify" so it can be checked before acting on it.'}`;
     return `Today is ${longDate()}. Run today's daily social media research for: ${c.niche.trim()}.
 Platforms: ${(c.platforms.length ? c.platforms : PLATFORMS.slice(0, 8)).join(', ')}. Market: ${market}.
 Deep-dive and report:
@@ -1471,7 +1488,7 @@ Deep-dive and report:
 2. Trends: trending formats, sounds, topics and hashtags or keywords relevant to this niche, per platform.
 3. Creator and competitor patterns that are working this week.
 4. Today's posts: a table with one ready-to-post idea per platform (platform, format, hook, caption, hashtags or keywords, best time to post).
-Give a source link for each algorithm or trend claim, official platform statements first, and say clearly when something could not be verified.`;
+${liveWeb() ? 'Give a source link for each algorithm or trend claim, official platform statements first, and say clearly when something could not be verified.' : 'Mark anything that may have changed recently as "verify" so it can be checked before acting on it.'}`;
   }
   const DEMO_RESEARCH = {
     seo(c) {
@@ -1629,7 +1646,7 @@ ${parts}`;
     let context = '';
     const brief = agent.research && !it.research ? latestBriefing(it.agent) : null;
     if (brief) context = `\n\nYour latest daily research briefing (${longDate(brief.it.ended)}). Use what is relevant and still current:\n"""\n${trunc(brief.it.output, 5000)}\n"""`;
-    const noWeb = agent.research && engine() === 'artifact' ? NO_WEB : '';
+    const noWeb = agent.research && engine() !== 'demo' && !liveWeb() ? NO_WEB : '';
     it.source = engine() === 'demo' ? 'demo' : agent.research && liveWeb() ? 'web' : 'model';
     const prompt = run.kind === 'mission'
       ? `Client brief:\n"""${run.brief}"""\n\nYour assignment from the Main Agent: ${it.title}\n${it.instructions}${context}\n\n${FORMAT}${noWeb}`
@@ -1716,6 +1733,7 @@ ${parts}`;
     run.status = it.status === 'done' ? 'done' : it.status;
     delete agentCtl[agentId];
     mark('all'); save();
+    return it;
   }
   const agentBusy = id => !!agentCtl[id] || !!(mission && mission.items.some(it => it.agent === id && it.status === 'running'));
 
@@ -1728,20 +1746,34 @@ ${parts}`;
   function latestBriefing(id, maxDays = 7) {
     return briefings(id).find(x => x.it.status === 'done' && x.it.output && Date.now() - x.it.ended < maxDays * 864e5) || null;
   }
+  // Per researcher: the day of the last attempt, attempts that day, the engine used and whether it succeeded.
   const dailyTried = store.get('mw-daily', {});
-  function startResearch(id, auto) {
+  const tried = id => { const t = dailyTried[id]; return typeof t === 'string' ? { day: t, tries: 1, eng: '', ok: true } : t || {}; };
+  async function startResearch(id, auto) {
     const a = BY_ID[id];
     if (!a?.research || agentBusy(id)) return false;
     if (!settings.research.niche.trim()) { toast('Add your business or niche in the research desk first'); $('#resNiche').focus(); return false; }
-    dailyTried[id] = dayKey(); store.set('mw-daily', dailyTried);
+    const prev = tried(id), today = dayKey();
+    dailyTried[id] = { day: today, tries: (prev.day === today ? prev.tries || 0 : 0) + 1, eng: engine(), ok: null };
+    store.set('mw-daily', dailyTried);
     logEvent('info', auto ? 'Daily research started' : 'Research started', `${a.name}: ${a.research.title.toLowerCase()}`);
-    runAgent(id, researchPrompt(id), { kind: 'research', title: a.research.title, select: !auto });
+    const it = await runAgent(id, researchPrompt(id), { kind: 'research', title: a.research.title, select: !auto });
+    if (dailyTried[id]?.day === today) { dailyTried[id].ok = it.status === 'done'; store.set('mw-daily', dailyTried); }
     return true;
+  }
+  // Today's briefing is still owed when none ran today, the last one failed or was cut off
+  // (up to 3 tries a day), or it was a demo template and Claude is connected now.
+  function owesBriefing(id) {
+    const t = tried(id);
+    if (t.day !== dayKey()) return true;
+    if (t.ok !== true) return (t.tries || 0) < 3;
+    return t.eng === 'demo' && engine() !== 'demo';
   }
   // Runs each researcher once a day, the first time the dashboard is open that day.
   function checkDaily() {
     if (!engineReady || !settings.research.auto || !settings.research.niche.trim()) return;
-    for (const a of RESEARCHERS) if (dailyTried[a.id] !== dayKey() && !agentBusy(a.id)) startResearch(a.id, true);
+    if ($('.research-card').contains(document.activeElement)) return;
+    for (const a of RESEARCHERS) if (owesBriefing(a.id) && !agentBusy(a.id)) startResearch(a.id, true);
   }
   function agentState(id) {
     let latest = null;
@@ -1762,12 +1794,13 @@ ${parts}`;
       .replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s.,;:!?)]|$)/g, '$1<em>$2</em>')
       .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
   }
+  const mdCells = row => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
   function md(src) {
     const L = String(src || '').replace(/\r/g, '').split('\n');
     const out = [];
     let i = 0, para = [];
     const flush = () => { if (para.length) { out.push(`<p>${inline(para.join(' '))}</p>`); para = []; } };
-    const cells = row => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+    const cells = mdCells;
     while (i < L.length) {
       const line = L[i];
       if (/^\s*```/.test(line)) {
@@ -1865,7 +1898,8 @@ ${parts}`;
   ];
   let aurT = 0, aurLast = 0, energy = 0.25;
   function drawAurora(now, dt) {
-    if (reduce && now - aurLast < 1500) return;
+    if (now - aurLast < (reduce ? 1500 : 33)) return;
+    dt = Math.min(0.25, (now - aurLast) / 1000);
     aurLast = now;
     if (!reduce) aurT += dt * (1 + energy * 1.6);
     const w = aur.width, h = aur.height, dark = palDark;
@@ -1904,10 +1938,14 @@ ${parts}`;
   /* ================= Glass sheen follows the pointer ================= */
   let ptr = null, ptrDirty = false;
   addEventListener('pointermove', e => { ptr = { x: e.clientX, y: e.clientY }; ptrDirty = true; }, { passive: true });
+  // Only panes on screen get the highlight, so a pointer move measures a handful, not all.
+  const onScreen = new Set();
+  const io = new IntersectionObserver(es => es.forEach(e => (e.isIntersecting ? onScreen.add(e.target) : onScreen.delete(e.target))));
+  $$('.glass').forEach(el => io.observe(el));
   function updateSheen() {
     if (!ptrDirty || !ptr) return;
     ptrDirty = false;
-    for (const el of $$('.glass')) {
+    for (const el of onScreen) {
       const r = el.getBoundingClientRect();
       el.style.setProperty('--mx', `${ptr.x - r.left}px`);
       el.style.setProperty('--my', `${ptr.y - r.top}px`);
@@ -1969,6 +2007,7 @@ ${parts}`;
       NET.subs[a.id] = $(`#ns-${a.id}`, netEl);
     }
     NET.core = $('#core', netEl);
+    NET.coreKey = NET.coreD = null;
     NET.coreS = $('#coreS', netEl);
     drawNet(0);
     updateNetText();
@@ -1997,6 +2036,9 @@ ${parts}`;
     if (!reduce) coreT += dt * (1 + working * 0.5);
     const busy = mission ? 1 : 0;
     const R = 30 + working * 2.5 + busy * 4;
+    const coreKey = `${R}|${coreT.toFixed(3)}|${NET.cx}`;
+    if (coreKey === NET.coreKey) return;
+    NET.coreKey = coreKey;
     const pts = 36;
     let d = '';
     for (let i = 0; i <= pts; i++) {
@@ -2004,7 +2046,7 @@ ${parts}`;
       const k = 1 + 0.07 * Math.sin(3 * a + coreT * 1.6) + 0.05 * Math.sin(5 * a - coreT * 1.1) + 0.03 * Math.sin(7 * a + coreT * 2.3);
       d += `${i ? 'L' : 'M'}${(NET.cx + Math.cos(a) * R * k).toFixed(1)} ${(NET.cy + Math.sin(a) * R * k).toFixed(1)}`;
     }
-    NET.core.setAttribute('d', d + 'Z');
+    if (d !== NET.coreD) { NET.coreD = d; NET.core.setAttribute('d', d + 'Z'); }
   }
   function updateNetText() {
     if (!NET.core) return;
@@ -2134,9 +2176,13 @@ ${parts}`;
       </li>`).join('');
   }
 
-  function renderAgents() {
+  function doneCounts() {
     const counts = {};
     for (const { it } of allItems()) if (it.status === 'done') counts[it.agent] = (counts[it.agent] || 0) + 1;
+    return counts;
+  }
+  function renderAgents() {
+    const counts = doneCounts();
     let working = 0;
     for (const a of AGENTS) {
       const li = $('#ag-' + a.id), st = states[a.id] || 'idle';
@@ -2151,8 +2197,7 @@ ${parts}`;
   }
 
   function renderLoads() {
-    const counts = {};
-    for (const { it } of allItems()) if (it.status === 'done') counts[it.agent] = (counts[it.agent] || 0) + 1;
+    const counts = doneCounts();
     const max = Math.max(1, ...Object.values(counts));
     let total = 0;
     for (const a of AGENTS) {
@@ -2327,10 +2372,10 @@ ${parts}`;
     .replace(/\*\*([^*]+)\*\*/g, '$1').replace(/__([^_]+)__/g, '$1')
     .replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s.,;:!?)]|$)/g, '$1$2')
     .replace(/`([^`]+)`/g, '$1').replace(/<br\s*\/?>/gi, ' ').trim();
-  const cellVal = s => { const t = plain(s); return /^-?\d+(\.\d+)?$/.test(t) && t.length < 16 ? Number(t) : t; };
+  const cellVal = s => { const t = plain(s); return /^-?(0|[1-9]\d{0,14})(\.\d+)?$/.test(t) ? Number(t) : t; };
   function mdRows(src) {
     const L = String(src || '').replace(/\r/g, '').split('\n'), rows = [];
-    const cells = row => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+    const cells = mdCells;
     const gap = () => { if (rows.length && rows[rows.length - 1].length) rows.push([]); };
     let i = 0;
     while (i < L.length) {
@@ -2388,8 +2433,7 @@ ${parts}`;
     return buildXlsx(sheets);
   }
   function xlsxName(run, it) {
-    const d = new Date(run.created);
-    const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const day = dayKey(run.created);
     const who = run.kind === 'mission' && !it ? 'mission' : BY_ID[(it || run.items[0]).agent].short.toLowerCase() + (run.kind === 'research' ? '-daily-research' : '');
     return `my-workforce-${who}-${(run.kind === 'mission' ? topicOf(run.brief) : subjectOf(run.brief)).replace(/\s+/g, '-')}-${day}.xlsx`;
   }
