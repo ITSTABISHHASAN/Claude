@@ -438,7 +438,7 @@ textarea.field { min-height: 108px; }
 .res-form label { font-size: 12.5px; font-weight: 600; color: var(--ink-2); min-width: 0; }
 .res-form .route { grid-column: 1 / -1; }
 .field.sm { display: block; margin-top: 6px; padding: 9px 12px; font-size: 14px; }
-.desks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.desks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
 .desk { display: grid; gap: 10px; align-content: start; min-width: 0; padding: 14px; border-radius: var(--r-md); background: var(--chip); border: 1px solid var(--edge); }
 .desk[data-s="running"] { border-color: var(--accent-line); background: var(--accent-soft); }
 .desk-meta { font-size: 13px; color: var(--ink-2); }
@@ -579,7 +579,7 @@ textarea.field { min-height: 108px; }
 }
 @media (max-width: 760px) {
   .loads { grid-template-columns: minmax(0, 1fr); }
-  .desks, .res-form { grid-template-columns: minmax(0, 1fr); }
+  .res-form { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
   .agents { grid-template-columns: minmax(0, 1fr); }
@@ -742,7 +742,7 @@ textarea.field { min-height: 108px; }
       <header class="card-head">
         <div>
           <h2 id="resTitle">Daily research desk</h2>
-          <p class="card-sub">The SEO and Social Media agents dig into keywords, search changes and every platform's algorithm each day, then use the latest briefing in all their work.</p>
+          <p class="card-sub">Every day the SEO agent digs into keywords and search changes, the Social Media agent into every platform's algorithm, and the Lead Generator finds new leads with contact details and LinkedIn links. Each uses its latest research in all its work.</p>
         </div>
         <button type="button" class="chip" id="autoBtn" aria-pressed="true">Auto daily · On</button>
       </header>
@@ -750,6 +750,9 @@ textarea.field { min-height: 108px; }
         <label>Business or niche<input class="field sm" id="resNiche" autocomplete="off" placeholder="e.g. vegan protein snacks for gym-goers"></label>
         <label>Seed keywords<input class="field sm" id="resSeeds" autocomplete="off" placeholder="comma separated, optional"></label>
         <label>Market<input class="field sm" id="resRegion" autocomplete="off" placeholder="e.g. United Kingdom, or global"></label>
+        <label>Leads: who to find<input class="field sm" id="leadWho" autocomplete="off" placeholder="e.g. independent gyms and fitness studios"></label>
+        <label>Decision makers<input class="field sm" id="leadTitles" autocomplete="off" placeholder="e.g. owner, founder, head of marketing"></label>
+        <label>New leads per day<select class="field sm" id="leadCount"><option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="30">30</option></select></label>
         <div class="route" role="group" aria-label="Platforms the Social Media agent researches">
           <span class="eyebrow">Platforms</span><span id="platChips" style="display:contents"></span>
         </div>
@@ -991,14 +994,16 @@ textarea.field { min-height: 108px; }
     },
     {
       id: 'leads', no: 5, name: 'LEAD GENERATOR', short: 'Leads', mins: 180,
-      role: 'Finds and qualifies prospects and writes the outreach that books meetings',
-      skills: ['ICP & personas', 'Prospect sourcing', 'Lead scoring', 'Cold email', 'LinkedIn outreach'],
+      role: 'Researches new leads every day: real prospects with contact details and LinkedIn links, qualified and ready for outreach',
+      skills: ['Daily lead research', 'Contact details', 'LinkedIn profiles', 'Lead scoring', 'Cold email', 'LinkedIn outreach'],
+      research: { title: 'Daily lead list', desk: 'DAILY LEAD LIST' },
       presets: [
+        ['Find leads now', 'Find 10 real prospects with their publicly listed business contact details and LinkedIn links (company, website, contact name, role, email, phone, LinkedIn profile, company LinkedIn, location, why they fit, source) for: '],
         ['ICP & sources', 'Define the ideal customer profile, buyer personas and where to find them (with LinkedIn Sales Navigator filters and Google search strings) for: '],
         ['Outreach sequence', 'Write a 4-step cold email and LinkedIn outreach sequence with subject lines and follow-up timing for: '],
         ['Lead magnet', 'Design a lead magnet and landing-page copy that captures qualified leads for: '],
       ],
-      system: 'You are Agent 5 of My Workforce: a B2B and B2C lead generation specialist. You define ideal customer profiles and personas, build sourcing strategies (LinkedIn Sales Navigator filters, Boolean and Google X-ray search strings, directories, communities, events, intent signals), set qualification and scoring rules, and write personalized cold email and LinkedIn sequences and lead magnets. You cannot browse, so never fabricate names, companies, emails or phone numbers of real people; instead give the exact searches and criteria to find them and a lead-list template to fill. Keep outreach compliant (GDPR, CAN-SPAM, opt-out).',
+      system: 'You are Agent 5 of My Workforce: a B2B and B2C lead generation specialist. Every day you research new prospects that match the client\'s ideal customer: real, currently operating businesses and the decision makers in them, with their publicly listed business contact details (work email, company phone, contact page), their LinkedIn profile and company page, and other business social profiles. You also define ideal customer profiles, build sourcing strategies (LinkedIn Sales Navigator filters, Boolean and Google X-ray search strings, directories, events, intent signals), score leads and write personalized cold email and LinkedIn outreach. Contact detail rules: report an email, phone number or profile URL only if it appears in a source you actually found, copied exactly, and give that source link; never guess or construct an email (for example from a name pattern), phone number or URL; never include home addresses or personal phone numbers; write "—" when a detail was not found. Without web access, never name specific people or give contact details; give the searches to find them instead. Keep outreach compliant (GDPR, PECR, CAN-SPAM: legitimate interest, clear opt-out).',
     },
     {
       id: 'dev', no: 6, name: 'FULL-STACK DEV', short: 'Dev', mins: 300,
@@ -1062,7 +1067,7 @@ textarea.field { min-height: 108px; }
   /* ================= Engines ================= */
   const settings = Object.assign({ engine: null, apiKey: '', model: 'claude-opus-5-5', web: true }, store.get('mw-settings', {}));
   const PLATFORMS = ['Instagram', 'TikTok', 'YouTube', 'Facebook', 'LinkedIn', 'X', 'Threads', 'Pinterest', 'Snapchat', 'Reddit'];
-  settings.research = Object.assign({ niche: '', seeds: '', region: '', platforms: PLATFORMS.slice(0, 8), auto: true }, settings.research || {});
+  settings.research = Object.assign({ niche: '', seeds: '', region: '', platforms: PLATFORMS.slice(0, 8), auto: true, leadWho: '', leadTitles: '', leadCount: 10 }, settings.research || {});
   // Live web search runs through the API key engine on models that support it.
   const liveWeb = () => engine() === 'api' && settings.web !== false && settings.model !== 'claude-haiku-5-5';
   let sampleFn = null, downloadsNs = null, engineReady = false;
@@ -1120,9 +1125,10 @@ textarea.field { min-height: 108px; }
     throw new AgentError(SAMPLE_MSG.invalid_json, 'invalid_json');
   }
 
-  async function callApi({ system, prompt, effort, signal, web }) {
+  async function callApi({ system, prompt, effort, signal, web, fetch: readPages, onMeta }) {
     const base = { model: settings.model, max_tokens: 16000, system, output_config: { effort } };
-    if (web) base.tools = [{ type: 'web_search_20260209', name: 'web_search', max_uses: 8 }];
+    if (web) base.tools = [{ type: 'web_search_20260209', name: 'web_search', max_uses: readPages ? 12 : 8 }];
+    if (web && readPages) base.tools.push({ type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 15, max_content_tokens: 8000 });
     const body = { ...base, messages: [{ role: 'user', content: prompt }] };
     const headers = {
       'content-type': 'application/json',
@@ -1167,8 +1173,18 @@ textarea.field { min-height: 108px; }
     if (!text.trim()) throw new AgentError(data.stop_reason === 'pause_turn' ? 'The web research ran out of steps before writing anything. Run it again.' : 'No answer came back. Try again.', 'empty');
     if (data.stop_reason === 'max_tokens') text += '\n\n> Output reached the length limit. Ask for one part at a time to get the rest.';
     if (data.stop_reason === 'pause_turn') text += '\n\n> The web research ran out of steps before it finished, so this may be incomplete. Run it again for a fuller result.';
-    if (web) text += sourcesTable(all, searches);
+    if (web) { onMeta?.({ urls: seenUrls(all) }); text += sourcesTable(all, searches); }
     return text;
+  }
+  // Every URL the model actually saw: search results, opened pages and citations.
+  function seenUrls(blocks) {
+    const urls = new Set();
+    for (const b of blocks) {
+      if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) for (const r of b.content) r.url && urls.add(r.url);
+      if (b.type === 'web_fetch_tool_result' && b.content?.url) urls.add(b.content.url);
+      if (b.type === 'text') for (const c of b.citations || []) c.url && urls.add(c.url);
+    }
+    return urls;
   }
   // Sources the answer cited (or, failing that, the pages the searches returned), as a table.
   function sourcesTable(blocks, searches) {
@@ -1183,7 +1199,7 @@ textarea.field { min-height: 108px; }
   }
 
   // One way to ask an agent, whatever powers it. Returns text, or parsed JSON when json is set.
-  async function ask({ system, prompt, tier = 'default', effort = 'medium', json = false, onText, signal, demo, web = false }) {
+  async function ask({ system, prompt, tier = 'default', effort = 'medium', json = false, onText, signal, demo, web = false, fetch: readPages = false, onMeta }) {
     const eng = engine();
     if (eng === 'artifact') {
       const input = `${system}\n\n---\n\n${prompt}`;
@@ -1197,7 +1213,7 @@ textarea.field { min-height: 108px; }
       }
     }
     if (eng === 'api') {
-      const text = await callApi({ system, prompt, effort, signal, web: web && liveWeb() });
+      const text = await callApi({ system, prompt, effort, signal, web: web && liveWeb(), fetch: readPages, onMeta });
       if (json) return parseJsonLoose(text);
       onText?.(text);
       return text;
@@ -1469,9 +1485,103 @@ export async function POST(req: Request) {
   };
   const longDate = (t = Date.now()) => new Date(t).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const NO_WEB = '\n\nYou have no web access for this task. Base it on what you know, mark anything that may have changed recently as "verify", and never invent dates, statistics, URLs or sources.';
+  /* Lead lists: the table every daily lead list uses, parsing it back, and link checks. */
+  const LEAD_COLS = ['#', 'Company', 'Website', 'Contact name', 'Role', 'Email', 'Phone', 'LinkedIn (person)', 'LinkedIn (company)', 'Other social', 'Location', 'Why they fit', 'Source'];
+  function leadTable(output) {
+    const L = String(output || '').split('\n');
+    for (let i = 0; i + 1 < L.length; i++) {
+      if (!/^\s*\|/.test(L[i]) || !/^\s*\|?\s*:?-{2,}/.test(L[i + 1])) continue;
+      const head = mdCells(L[i]).map(h => plain(h));
+      if (!head.some(h => /^company$/i.test(h)) || !head.some(h => /linkedin|email/i.test(h))) continue;
+      const rows = [];
+      for (let k = i + 2; k < L.length && /^\s*\|/.test(L[k]); k++) {
+        const c = mdCells(L[k]).map(v => plain(v));
+        rows.push(Object.fromEntries(head.map((h, j) => [h, c[j] || ''])));
+      }
+      return { head, rows };
+    }
+    return { head: [], rows: [] };
+  }
+  const blank = v => !v || /^[—–-]+$/.test(v.trim());
+  // Same company and contact (or, with no contact name, same profile link) is the same lead.
+  const norm = v => (blank(v) ? '' : v.replace(/\s*\(check\)$/, '').toLowerCase().replace(/\s+/g, ' ').trim());
+  const leadKey = r => (norm(r.Company) ? `${norm(r.Company)}|${norm(r['Contact name']) || norm(r['LinkedIn (person)'])}` : '');
+  function leadRuns(days = 3650) {
+    return briefings('leads').filter(x => x.it.status === 'done' && x.it.source !== 'demo' && Date.now() - x.it.ended < days * 864e5);
+  }
+  function knownLeadCompanies() {
+    const names = new Set();
+    for (const x of leadRuns(45)) for (const r of leadTable(x.it.output).rows) if (!blank(r.Company)) names.add(r.Company.replace(/\s*\(check\)$/, ''));
+    return [...names].slice(0, 120);
+  }
+  // A LinkedIn link the agent never saw in a search result or opened page gets "(check)".
+  const normUrl = u => u.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\.|^[a-z]{2}\.(?=linkedin\.com)/, '').replace(/[?#].*$/, '').replace(/\/+$/, '');
+  function checkLeadLinks(text, urls) {
+    const seen = new Set([...urls].map(normUrl));
+    let total = 0, flagged = 0;
+    const out = text.split('\n').map(line => (/^\s*\|/.test(line) ? line.replace(/https?:\/\/(?:[\w-]+\.)?linkedin\.com\/[^\s|)<>]+/gi, u => {
+      total++;
+      if (seen.has(normUrl(u))) return u;
+      flagged++;
+      return `${u} (check)`;
+    }) : line)).join('\n');
+    if (!total) return out;
+    return out + `\n\n> LinkedIn links: ${total - flagged} of ${total} appeared in the pages the agent searched or opened.${flagged ? ` ${flagged} marked "(check)" did not; confirm them before outreach.` : ''}`;
+  }
+  // One row per lead across every day: newest details win, blanks filled from earlier days,
+  // dated by the day the lead was first found.
+  function allLeads() {
+    const byKey = new Map();
+    for (const x of leadRuns()) for (const r of leadTable(x.it.output).rows) {
+      const key = leadKey(r);
+      if (!key) continue;
+      const cur = byKey.get(key);
+      if (!cur) { byKey.set(key, { found: x.it.ended, r: { ...r } }); continue; }
+      cur.found = Math.min(cur.found, x.it.ended);
+      for (const h of LEAD_COLS) if (blank(cur.r[h]) && !blank(r[h])) cur.r[h] = r[h];
+    }
+    return [...byKey.values()];
+  }
+  function allLeadsWorkbook() {
+    const rows = allLeads().map(({ found, r }) => [new Date(found).toLocaleDateString(), ...LEAD_COLS.slice(1).map(h => r[h] || '')]);
+    if (!rows.length) return null;
+    return buildXlsx([{ name: 'All leads', rows: [
+      [{ v: `My Workforce · All leads (${rows.length})`, s: ST.title }],
+      [{ v: `Found by the Lead Generator's daily research for: ${settings.research.niche}. Verify contacts and follow GDPR, PECR and CAN-SPAM before outreach.`, s: ST.line }],
+      [],
+      ['Date found', ...LEAD_COLS.slice(1)].map(v => ({ v, s: ST.th })),
+      ...rows,
+    ] }]);
+  }
+
   function researchPrompt(id) {
     const c = settings.research;
     const market = c.region.trim() || 'global';
+    if (id === 'leads') {
+      const n = +c.leadCount || 10;
+      const who = c.leadWho.trim() || `businesses most likely to buy ${c.niche.trim()}`;
+      const titles = c.leadTitles.trim() || 'owner, founder or the head of the team that would buy this';
+      const head = `Today is ${longDate()}. Run today's lead research.
+We sell: ${c.niche.trim()}. Find ${n} new prospects: ${who}. Location: ${market}. Decision makers: ${titles}.`;
+      if (!liveWeb()) return `${head}
+You have no web access today, so you cannot find real leads. Do not name any company or person and do not give any email, phone number or URL as a lead.
+Instead give:
+1. The exact searches to find these ${n} prospects: LinkedIn Sales Navigator filters, Google X-ray search strings, directories and associations to check.
+2. Qualification criteria and a scoring rule.
+3. An empty lead table with exactly these columns for the team to fill: | ${LEAD_COLS.join(' | ')} |`;
+      const known = knownLeadCompanies();
+      return `${head}
+Use web search, and open company websites, contact pages, directories and LinkedIn pages, to find real, currently operating businesses and the right decision maker at each.
+Contact details:
+- Include an email, phone number or profile link only if it is published on a page you found; copy it exactly and put that page in the Source column. Never guess or construct an email address (for example from a name pattern), phone number or URL. Write — when you did not find it.
+- Prefer business details: work email, company phone, company contact form. Never include home addresses or personal phone numbers.
+- LinkedIn (person) is the decision maker's profile URL and LinkedIn (company) the company page URL, only when you found them.
+${known.length ? `Skip these companies, already found on earlier days: ${known.join('; ')}.\n` : ''}Output:
+1. A lead table with exactly these columns, one lead per row: | ${LEAD_COLS.join(' | ')} |
+2. Top 3 to contact first, and why.
+3. A one-line personalized opener for each of the top 3.
+4. If you found fewer than ${n} good leads, say so and suggest where to look next.`;
+    }
     if (id === 'seo') return `Today is ${longDate()}. Run today's daily SEO, AEO and GEO research for: ${c.niche.trim()}.
 Seed keywords: ${c.seeds.trim() || 'choose the best seeds for this niche'}. Market: ${market}.
 Deep-dive and report:
@@ -1491,6 +1601,25 @@ Deep-dive and report:
 ${liveWeb() ? 'Give a source link for each algorithm or trend claim, official platform statements first, and say clearly when something could not be verified.' : 'Mark anything that may have changed recently as "verify" so it can be checked before acting on it.'}`;
   }
   const DEMO_RESEARCH = {
+    leads(c) {
+      const n = Math.min(+c.leadCount || 10, 5);
+      const role = (c.leadTitles.split(',')[0] || 'Owner').trim();
+      return `## Daily lead list: ${cap(c.leadWho.trim() || topicOf(c.niche))}
+*${longDate()} · location: ${c.region || 'global'}*
+
+These rows show the shape of a real lead list only. They are not real companies or people. With live web research (API key, Opus 5.5 or Sonnet 5.5) the Lead Generator fills them with real prospects, their published contact details, LinkedIn links and a source for each.
+
+| ${LEAD_COLS.join(' | ')} |
+| ${LEAD_COLS.map(() => '---').join(' | ')} |
+${Array.from({ length: n }, (_, i) => `| ${i + 1} | Example company ${i + 1} (sample) | — | Sample contact | ${role} | — | — | — | — | — | ${c.region || '—'} | Matches your target customer | — |`).join('\n')}
+
+### Where to find them
+| Source | Search |
+| --- | --- |
+| LinkedIn Sales Navigator | Title: ${c.leadTitles || 'Owner OR Founder'} · Location: ${c.region || 'your market'} · Industry: ${c.leadWho || 'your target'} |
+| Google X-ray | \`site:linkedin.com/in ("${role}") "${c.leadWho || topicOf(c.niche)}" "${c.region || ''}"\` |
+| Directories | Industry associations, Google Maps listings, trade-show exhibitor lists |`;
+    },
     seo(c) {
       const t = topicOf(c.niche) || 'your niche';
       return `## Daily keyword & search briefing: ${cap(t)}
@@ -1654,11 +1783,14 @@ ${parts}`;
     const demo = (sig, onText) => typeOut(DEMO_NOTE + (it.research
       ? DEMO_RESEARCH[it.agent](settings.research)
       : DEMO[it.agent](run.kind === 'mission' ? topicOf(run.brief) : subjectOf(it.instructions), run.brief)), onText, sig);
+    let urls = null;
     try {
-      const text = await ask({
+      let text = await ask({
         system: agent.system, prompt, signal, demo, web: !!agent.research, effort: it.research ? 'high' : 'medium',
+        fetch: it.agent === 'leads', onMeta: m => { urls = m.urls; },
         onText: tx => { it.output = tx; mark('out', 'ws'); },
       });
+      if (it.agent === 'leads' && urls) text = checkLeadLinks(text, urls);
       it.output = trunc(text, MAX_OUT);
       it.status = 'done'; it.ended = Date.now();
       logEvent('good', `${agent.name} delivered`, `${it.title} · ${Math.max(1, Math.round((it.ended - it.started) / 1000))} s`);
@@ -2625,6 +2757,7 @@ ${parts}`;
   /* ================= Research desk ================= */
   const resCfg = settings.research;
   $('#resNiche').value = resCfg.niche; $('#resSeeds').value = resCfg.seeds; $('#resRegion').value = resCfg.region;
+  $('#leadWho').value = resCfg.leadWho; $('#leadTitles').value = resCfg.leadTitles; $('#leadCount').value = String(resCfg.leadCount);
   $('#platChips').innerHTML = PLATFORMS.map(p => `<button type="button" class="chip" data-plat="${esc(p)}" aria-pressed="${resCfg.platforms.includes(p)}">${esc(p)}</button>`).join('');
   $('#desks').innerHTML = RESEARCHERS.map(a => `
     <article class="desk" id="desk-${a.id}" data-s="idle">
@@ -2641,12 +2774,14 @@ ${parts}`;
         <button type="button" class="btn primary" data-research="${a.id}">Research now</button>
         <button type="button" class="btn" data-brief-open="${a.id}">Open briefing</button>
         <button type="button" class="btn" data-brief-xls="${a.id}">Excel</button>
+        ${a.id === 'leads' ? '<button type="button" class="btn" data-all-leads>All leads (Excel)</button>' : ''}
       </div>
     </article>`).join('');
   const saveRes = () => { store.set('mw-settings', settings); mark('research'); };
   let resTimer = 0;
   $('#resForm').addEventListener('input', () => {
     resCfg.niche = $('#resNiche').value; resCfg.seeds = $('#resSeeds').value; resCfg.region = $('#resRegion').value;
+    resCfg.leadWho = $('#leadWho').value; resCfg.leadTitles = $('#leadTitles').value; resCfg.leadCount = +$('#leadCount').value || 10;
     clearTimeout(resTimer); resTimer = setTimeout(saveRes, 300);
   });
   // Start the day's research only once the viewer has finished with the form.
@@ -2670,6 +2805,12 @@ ${parts}`;
   $('#desks').addEventListener('click', e => {
     const go = e.target.closest('[data-research]'), open = e.target.closest('[data-brief-open]'), xls = e.target.closest('[data-brief-xls]');
     if (go) { startResearch(go.dataset.research, false); return; }
+    if (e.target.closest('[data-all-leads]')) {
+      const wb = allLeadsWorkbook();
+      if (wb) downloadFile(`my-workforce-all-leads-${dayKey()}.xlsx`, wb, XLSX_MIME);
+      else toast('No real leads yet. Leads come from live web research (API key with Opus 5.5 or Sonnet 5.5).');
+      return;
+    }
     const id = (open || xls)?.dataset.briefOpen || (open || xls)?.dataset.briefXls;
     const b = id && (briefings(id).find(x => x.it.status === 'done') || briefings(id).find(x => x.it.output));
     if (!b) return;
@@ -2702,6 +2843,11 @@ ${parts}`;
       $('[data-days]', el).innerHTML = days.join('');
       $('[data-research]', el).disabled = agentBusy(a.id);
       $('[data-brief-open]', el).disabled = $('[data-brief-xls]', el).disabled = !list.some(x => x.it.output);
+      if (a.id === 'leads') {
+        const total = allLeads().length;
+        $('[data-all-leads]', el).disabled = !total;
+        if (!busy && last && last.it.source !== 'demo') $('[data-meta]', el).innerHTML += ` · <strong>${leadTable(last.it.output).rows.length}</strong> new · ${total} in total`;
+      }
       const card = $('#ag-' + a.id + ' [data-daily]');
       if (card) {
         card.classList.toggle('on', !!last && dayKey(last.it.ended) === dayKey());
@@ -2715,7 +2861,8 @@ ${parts}`;
     else if (eng === 'api') note = settings.model === 'claude-haiku-5-5' ? 'Haiku 5.5 researches without web search here. Choose Opus 5.5 or Sonnet 5.5 in Settings for live web research.' : 'Live web research is off in Settings, so briefings use Claude\'s own knowledge.';
     else if (eng === 'artifact') note = 'Inside Claude, agents cannot browse the web, so briefings use Claude\'s own knowledge and flag what to verify. For live web research with sources, add an API key in Settings.';
     else note = 'Demo mode: briefings are templates. Connect Claude in Settings for real research.';
-    note += resCfg.auto ? ' Auto daily runs both briefings once a day, the first time My Workforce is open that day.' : ' Auto daily is off; use Research now.';
+    if (resCfg.niche.trim() && eng !== 'demo' && !liveWeb()) note += ' The Lead Generator needs live web research to find real leads; until then it gives you the searches to run instead of names.';
+    note += resCfg.auto ? ' Auto daily runs all three once a day, the first time My Workforce is open that day.' : ' Auto daily is off; use Research now.';
     $('#resNote').dataset.level = lvl;
     $('#resNote').innerHTML = `<span class="ico">${ICONS[lvl]}</span><span>${esc(note)}</span>`;
   }
