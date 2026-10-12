@@ -1,0 +1,13 @@
+{
+  "name": "My Workforce",
+  "short_name": "Workforce",
+  "description": "AI agent command center by Zedtronix: one main agent and six specialist agents.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#02040a",
+  "theme_color": "#02040a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
