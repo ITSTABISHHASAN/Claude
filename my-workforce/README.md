@@ -23,7 +23,7 @@ The SEO · AEO · GEO, Social Media and Lead Generator agents research every day
 
 - **Keyword & search briefing (SEO):** keyword opportunities with intent, trend and priority; rising questions; Google and AI-search changes; competitor gaps; today's tasks.
 - **Platform & algorithm briefing (Social Media):** what each platform's algorithm rewards and suppresses right now, recent changes, trends, and one ready-to-post idea per platform for today.
-- **Daily lead list (Lead Generator):** new prospects that match *Leads: who to find*, *Decision makers* and *Market* (5 to 30 a day). Each row has company, website, contact name, role, email, phone, LinkedIn profile, LinkedIn company page, other social, location, why they fit and the source page. Companies found on earlier days are skipped. **All leads (Excel)** downloads every lead found so far as one sheet, merged and dated by the day each was first found.
+- **Daily lead list (Lead Generator):** new prospects that match *Leads: who to find*, *Decision makers* and *Market* (5 to 30 a day). Each row has company, website, contact name, role, email, phone, LinkedIn profile, LinkedIn company page, other social, location, why they fit and the source page. Companies found on earlier days are skipped. Every contact detail is then checked automatically (see *Verified leads* below).
 
 Enter your business or niche, seed keywords, market, platforms and lead targets on the desk. With **Auto daily** on, all three run once a day, the first time My Workforce is open that day; **Research now** runs one any time. Each agent then uses its latest briefing as context in every other task (posts, keyword work, mission assignments). Briefings appear in Deliverables and download to Excel like everything else.
 
@@ -37,7 +37,25 @@ How current the research is depends on the engine:
 
 Leads are only real with live web research (API key with Opus 5.5 or Sonnet 5.5). The agent searches the web and opens company websites, contact pages and directories. It reports an email, phone number or profile link only when it is published on a page it found, puts that page in the *Source* column, and writes "—" otherwise. It never guesses emails from name patterns and never includes home addresses or personal phone numbers. Any LinkedIn link that did not appear in the pages it searched or opened is marked **(check)**. Without live web research, the agent does not name companies or people; it gives you the searches to run instead.
 
-Verify contacts before outreach and follow GDPR, PECR and CAN-SPAM (legitimate interest, clear opt-out).
+### Verified leads
+
+After each lead search, the app checks every contact detail against what the web tools actually returned (pages the agent opened, search results and cited passages; the agent's own words and search queries don't count):
+
+| Detail | Verified when |
+| --- | --- |
+| Email | The exact address appears on an opened page or in the search results, is a valid address, and its domain has a mail server (DNS lookup via Google Public DNS; only the domain is sent) |
+| Phone | The number appears on an opened page or in the search results (any formatting) and has 7 to 15 digits |
+| LinkedIn | The profile link appeared in the search results or on an opened page |
+
+A lead is **verified** when it has a verified email or a verified phone. Each daily lead list gets *Verified* and *Checks* columns, and the desk shows how many are verified.
+
+**Verified leads (Excel)** builds one workbook from every day's research, merged and dated by the day each lead was first found:
+
+- **Verified leads:** only verified records, showing only the verified email, phone and LinkedIn, plus the source page and checks. The header row is frozen and has filters.
+- **Needs review:** everything else, with the reason (for example "Email ✖ not on any page the agent opened").
+- **How verified:** counts and what the checks do and don't prove.
+
+The checks can't prove that a mailbox exists or that the person still works there. Send a test email or check LinkedIn before outreach, and follow GDPR, PECR and CAN-SPAM (legitimate interest, clear opt-out).
 
 A browser page only runs while it is open, so "daily" means the first time you open the dashboard each day.
 
